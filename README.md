@@ -2,7 +2,7 @@
 
 ## Pré-requisitos
 
-- JDK 11 ou superior
+- JDK 21 ou superior
 - Maven 3.8 ou superior
 
 ## Como rodar
