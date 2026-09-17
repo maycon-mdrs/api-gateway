@@ -1,74 +1,71 @@
 package br.imd.ufrn;
 
-import br.imd.ufrn.exceptions.CamaroesBaseException;
-import br.imd.ufrn.models.Table;
-import br.imd.ufrn.models.Reservation;
+import br.imd.ufrn.component.ReservationsComponent;
+import br.imd.ufrn.component.TablesComponent;
+import br.imd.ufrn.gateway.ApiGateway;
 import br.imd.ufrn.models.ServerRole;
-import br.imd.ufrn.services.ReservationService;
-import br.imd.ufrn.services.TableService;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
 
 public class Main {
 
-    public static void main(String[] args) {
-        System.out.println("[api-gateway] Camarões");
-        
-        TableService tableService = new TableService();
-        ReservationService leader = new ReservationService(tableService, ServerRole.LEADING);
-        ReservationService follower = new ReservationService(tableService, ServerRole.FOLLOWING);
-
-        System.out.println("\nMesas ativas:");
-        for (Table table : tableService.findActive()) {
-            System.out.println("  " + table);
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            printUsage();
+            return;
         }
 
-        LocalDateTime start = LocalDateTime.of(2026, 9, 20, 19, 0);
-        LocalDateTime end = LocalDateTime.of(2026, 9, 20, 21, 0);
-
-        System.out.println("\nDisponíveis para 4 pessoas em " + start + ":");
-        List<Table> availableTables = leader.findAvailableTables(start, end, 4);
-        for (Table table : availableTables) {
-            System.out.println("  " + table.getId() + " (" + table.getArea() + ")");
+        String mode = args[0].toLowerCase();
+        switch (mode) {
+            case "gateway" -> new ApiGateway().start();
+            case "tables" -> startTables(args);
+            case "reservations" -> startReservations(args);
+            default -> printUsage();
         }
-
-        Reservation reservation = leader.create("Ana", "M03", start, end, 4);
-        System.out.println("\nReserva criada pelo LEADER: " + reservation);
-
-        System.out.println("Consulta: " + leader.findById(reservation.getId()).orElse(null));
-
-        demonstrateError("mesa inexistente", () ->
-                leader.create("Bruno", "M99", start, end, 2));
-
-        demonstrateError("capacidade excedida", () ->
-                leader.create("Carla", "M01", start.plusDays(1), end.plusDays(1), 10));
-
-        demonstrateError("intervalo sobreposto", () ->
-                leader.create("Diego", "M03", start.plusHours(1), end.plusHours(1), 3));
-
-        demonstrateError("FOLLOWER não cria", () ->
-                follower.create("Elena", "M04", start, end, 2));
-
-        demonstrateError("FOLLOWER não cancela", () ->
-                follower.cancel(reservation.getId()));
-
-        Reservation cancelled = leader.cancel(reservation.getId());
-        System.out.println("\nReserva cancelada pelo LEADER: " + cancelled);
-
-        System.out.println("\nApós cancelamento, M03 disponível novamente?");
-        boolean available = leader.findAvailableTables(start, end, 4).stream()
-                .anyMatch(m -> m.getId().equals("M03"));
-        System.out.println("  " + available);
     }
 
-    private static void demonstrateError(String scenario, Runnable action) {
-        try {
-            action.run();
-            System.out.println("FALHOU (" + scenario + "): esperado erro");
-        } catch (CamaroesBaseException e) {
-            System.out.println("OK (" + scenario + "): " + e.getFriendlyMessage());
-        }
+    private static void startTables(String[] args) throws Exception {
+        int port = argInt(args, 1, 9101);
+        String gatewayHost = arg(args, 2, "127.0.0.1");
+        int controlPort = argInt(args, 3, ApiGateway.CONTROL_PORT);
+        String advertiseHost = arg(args, 4, "127.0.0.1");
+        new TablesComponent(port, gatewayHost, controlPort, advertiseHost).start();
+    }
+
+    private static void startReservations(String[] args) throws Exception {
+        int port = argInt(args, 1, 9201);
+        String gatewayHost = arg(args, 2, "127.0.0.1");
+        int controlPort = argInt(args, 3, ApiGateway.CONTROL_PORT);
+        String advertiseHost = arg(args, 4, "127.0.0.1");
+        ServerRole role = ServerRole.valueOf(arg(args, 5, "LEADING").toUpperCase());
+        new ReservationsComponent(port, gatewayHost, controlPort, advertiseHost, role).start();
+    }
+
+    private static String arg(String[] args, int index, String defaultValue) {
+        return args.length > index ? args[index] : defaultValue;
+    }
+
+    private static int argInt(String[] args, int index, int defaultValue) {
+        return args.length > index ? Integer.parseInt(args[index]) : defaultValue;
+    }
+
+    private static void printUsage() {
+        System.out.println("""
+                Uso:
+                  java -cp target/classes br.imd.ufrn.Main gateway
+                  java -cp target/classes br.imd.ufrn.Main tables [port] [gatewayHost] [controlPort] [advertiseHost]
+                  java -cp target/classes br.imd.ufrn.Main reservations [port] [gatewayHost] [controlPort] [advertiseHost] [LEADING|FOLLOWING]
+
+                Exemplos locais:
+                  java -cp target/classes br.imd.ufrn.Main gateway
+                  java -cp target/classes br.imd.ufrn.Main tables 9101
+                  java -cp target/classes br.imd.ufrn.Main tables 9102
+                  java -cp target/classes br.imd.ufrn.Main reservations 9201
+
+                Teste HTTP:
+                  curl http://127.0.0.1:8080/registry
+                  curl http://127.0.0.1:8080/tables
+
+                Teste TCP (porta 9091), uma linha:
+                  ROUTE tables LIST
+                """);
     }
 }
