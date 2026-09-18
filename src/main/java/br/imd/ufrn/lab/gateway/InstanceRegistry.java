@@ -9,9 +9,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Cadastro das instâncias + round-robin (vive no processo do gateway).
- */
 public class InstanceRegistry {
     private final Map<String, InstanceInfo> instances = new ConcurrentHashMap<>();
     private final Map<String, AtomicInteger> roundRobin = new ConcurrentHashMap<>();

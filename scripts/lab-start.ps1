@@ -40,5 +40,8 @@ Start-LabWindow "lab-br-1" @("br.imd.ufrn.lab.instance.InstanceMain", "br", "br-
 Start-LabWindow "lab-br-2" @("br.imd.ufrn.lab.instance.InstanceMain", "br", "br-2", "9102")
 Start-LabWindow "lab-pt-1" @("br.imd.ufrn.lab.instance.InstanceMain", "pt", "pt-1", "9201")
 
-Write-Host "Processos abertos. Teste: .\scripts\lab-time.ps1 br"
+Write-Host "Processos abertos."
+Write-Host "  TCP:  .\scripts\lab-time.ps1 br"
+Write-Host "  HTTP: curl http://127.0.0.1:8080/time/br"
+Write-Host "  UDP:  .\scripts\lab-udp.ps1 br"
 Write-Host "Demo kill: veja scripts\lab-kill-demo.md"

@@ -9,7 +9,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-/** Encaminha uma linha TCP para a instância e devolve a resposta. */
 public class TcpForwarder {
 
     private final int connectTimeoutMillis;

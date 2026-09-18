@@ -13,10 +13,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Porta de controle do gateway (:9000).
- * Recebe REGISTER / HEARTBEAT / LIST das instâncias.
- */
 public class HeartbeatServer implements Runnable {
 
     private final int port;

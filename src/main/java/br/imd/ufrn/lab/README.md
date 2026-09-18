@@ -1,4 +1,4 @@
-# Lab Fase 1 — Gateway + Heartbeat (horário BR/PT)
+# Lab Fase 2 — Gateway + Heartbeat (horário BR/PT)
 
 ## Pacotes
 
@@ -8,7 +8,10 @@ br.imd.ufrn.lab
 ├── gateway/     → processo do Gateway
 │   ├── GatewayMain
 │   ├── HeartbeatServer   (:9000)
+│   ├── ClientHttpServer  (:8080)
+│   ├── ClientUdpServer   (:9090)
 │   ├── ClientTcpServer   (:9091)
+│   ├── TimeRequestHandler
 │   ├── InstanceRegistry
 │   └── TcpForwarder
 └── instance/    → processo de cada instância
@@ -22,9 +25,13 @@ br.imd.ufrn.lab
 | Porta | Papel |
 |------:|-------|
 | 9000 | REGISTER / HEARTBEAT |
-| 9091 | Cliente: `TIME br` / `TIME pt` |
+| 8080 | Cliente HTTP: `GET /time/br`, `GET /time/pt`, `GET /registry` |
+| 9090 | Cliente UDP: datagram `TIME br` / `TIME pt` |
+| 9091 | Cliente TCP: linha `TIME br` / `TIME pt` |
 | 91xx | Instâncias Brasil |
 | 92xx | Instâncias Portugal |
+
+As instâncias continuam só em TCP. HTTP e UDP no gateway viram `TIME br|pt` e usam o mesmo round-robin + `TcpForwarder`.
 
 ## Compilar
 
@@ -32,10 +39,6 @@ br.imd.ufrn.lab
 $env:JAVA_HOME = "C:\Program Files\Java\jdk-22"
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 mkdir -Force target\lab-classes | Out-Null
-Get-ChildItem -Recurse src\main\java\br\imd\ufrn\lab -Filter *.java |
-  ForEach-Object { $_.FullName } |
-  ForEach-Object { $_ } |
-  Out-Null
 javac -encoding UTF-8 -d target\lab-classes (Get-ChildItem -Recurse src\main\java\br\imd\ufrn\lab -Filter *.java | ForEach-Object FullName)
 ```
 
@@ -56,5 +59,21 @@ java -cp target\lab-classes br.imd.ufrn.lab.instance.InstanceMain br br-2 9102
 java -cp target\lab-classes br.imd.ufrn.lab.instance.InstanceMain pt pt-1 9201
 ```
 
-Teste: `.\scripts\lab-time.ps1 br`  
+## Testar
+
+```powershell
+# TCP
+.\scripts\lab-time.ps1 br
+.\scripts\lab-time.ps1 pt
+
+# HTTP
+curl http://127.0.0.1:8080/time/br
+curl http://127.0.0.1:8080/time/pt
+curl http://127.0.0.1:8080/registry
+
+# UDP
+.\scripts\lab-udp.ps1 br
+.\scripts\lab-udp.ps1 pt
+```
+
 Demo kill: `scripts\lab-kill-demo.md`
