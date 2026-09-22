@@ -1,4 +1,4 @@
-﻿# Ambiente AWS — registro
+# Ambiente AWS — registro
 
 Documentação do que foi feito na EC2 para o api-gateway (1 máquina).
 

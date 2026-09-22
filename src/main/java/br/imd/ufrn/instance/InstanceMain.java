@@ -1,4 +1,4 @@
-﻿package br.imd.ufrn.instance;
+package br.imd.ufrn.instance;
 
 import br.imd.ufrn.gateway.GatewayMain;
 

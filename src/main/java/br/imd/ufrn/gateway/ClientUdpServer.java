@@ -1,4 +1,4 @@
-﻿package br.imd.ufrn.gateway;
+package br.imd.ufrn.gateway;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

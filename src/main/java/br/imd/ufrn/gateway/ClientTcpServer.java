@@ -1,4 +1,4 @@
-﻿package br.imd.ufrn.gateway;
+package br.imd.ufrn.gateway;
 
 import java.io.BufferedReader;
 import java.io.IOException;
