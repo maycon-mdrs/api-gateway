@@ -1,6 +1,6 @@
-package br.imd.ufrn.lab.gateway;
+package br.imd.ufrn.gateway;
 
-import br.imd.ufrn.lab.model.InstanceInfo;
+import br.imd.ufrn.model.InstanceInfo;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -13,10 +13,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Entrada HTTP do cliente (:8080).
- * GET /time/br | GET /time/pt | GET /registry
- */
 public class ClientHttpServer implements Runnable {
 
     private final int port;

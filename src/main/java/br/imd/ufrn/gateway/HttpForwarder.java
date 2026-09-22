@@ -1,6 +1,6 @@
-package br.imd.ufrn.lab.gateway;
+package br.imd.ufrn.gateway;
 
-import br.imd.ufrn.lab.model.InstanceInfo;
+import br.imd.ufrn.model.InstanceInfo;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,9 +10,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Encaminha GET /time/{zone} em HTTP até a instância (mesma porta TCP, demux HTTP).
- */
 public class HttpForwarder {
 
     private final int connectTimeoutMillis;

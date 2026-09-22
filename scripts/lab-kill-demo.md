@@ -46,7 +46,7 @@ Suba de novo:
 
 ```powershell
 $env:JAVA_HOME = "C:\Program Files\Java\jdk-22"
-java -cp target\lab-classes br.imd.ufrn.lab.instance.InstanceMain br br-2 9102
+java -cp target\classes br.imd.ufrn.Main br br-2 9102
 ```
 
 Gateway: `[NEW] br-2 ...`  

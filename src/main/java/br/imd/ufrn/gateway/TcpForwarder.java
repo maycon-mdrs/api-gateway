@@ -1,5 +1,7 @@
 package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.model.InstanceInfo;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,7 +19,7 @@ public class TcpForwarder {
         this.readTimeoutMillis = readTimeoutMillis;
     }
 
-    public String forward(ServiceInstance target, String payload) throws IOException {
+    public String forward(InstanceInfo target, String line) throws IOException {
         try (Socket socket = new Socket()) {
             socket.connect(
                     new java.net.InetSocketAddress(target.getHost(), target.getPort()),
@@ -28,7 +30,7 @@ public class TcpForwarder {
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
-            out.println(payload);
+            out.println(line);
             String response = in.readLine();
             return response == null ? "ERROR empty response" : response;
         }

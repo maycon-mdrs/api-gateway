@@ -1,12 +1,10 @@
-package br.imd.ufrn.lab.model;
+package br.imd.ufrn.model;
 
 import lombok.Getter;
 
 import java.util.Objects;
 
-/**
- * Ficha de uma instância conhecida pelo gateway.
- */
+
 @Getter
 public class InstanceInfo {
     private final String instanceId;

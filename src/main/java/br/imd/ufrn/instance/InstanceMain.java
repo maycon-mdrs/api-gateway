@@ -1,15 +1,7 @@
-package br.imd.ufrn.lab.instance;
+package br.imd.ufrn.instance;
 
-import br.imd.ufrn.lab.gateway.GatewayMain;
+import br.imd.ufrn.gateway.GatewayMain;
 
-/**
- * Processo de UMA instância:
- *   HeartbeatClient     → gateway :9000
- *   InstanceTcpServer   → TIME (TCP) + GET /time/* (HTTP) na porta local
- *   InstanceUdpServer   → TIME (UDP) na mesma porta
- *
- * Uso: java ... InstanceMain <br|pt> <instanceId> <port> [gatewayHost] [advertiseHost]
- */
 public class InstanceMain {
 
     public static void main(String[] args) {

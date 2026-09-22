@@ -1,4 +1,4 @@
-package br.imd.ufrn.lab.instance;
+package br.imd.ufrn.instance;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -8,9 +8,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Lado da instância: escuta UDP na mesma porta do TCP e responde TIME br|pt.
- */
 public class InstanceUdpServer implements Runnable {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;

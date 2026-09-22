@@ -1,4 +1,4 @@
-package br.imd.ufrn.component;
+package br.imd.ufrn.gateway;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,31 +9,28 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 
-public class ComponentTcpServer implements Runnable {
+public class ClientTcpServer implements Runnable {
 
     private final int port;
-    private final String name;
-    private final Function<String, String> handler;
-    private final ExecutorService pool = Executors.newCachedThreadPool();
+    private final TimeRequestHandler handler;
+    private final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
 
-    public ComponentTcpServer(int port, String name, Function<String, String> handler) {
+    public ClientTcpServer(int port, TimeRequestHandler handler) {
         this.port = port;
-        this.name = name;
         this.handler = handler;
     }
 
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("[" + name + "] ouvindo TCP " + port);
+            System.out.println("[lab-tcp] ouvindo TCP " + port);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = serverSocket.accept();
-                pool.submit(() -> handle(socket));
+                pool.execute(() -> handle(socket));
             }
         } catch (IOException e) {
-            System.err.println("[" + name + "] erro: " + e.getMessage());
+            System.err.println("[lab-tcp] erro: " + e.getMessage());
         }
     }
 
@@ -44,13 +41,9 @@ public class ComponentTcpServer implements Runnable {
              PrintWriter out = new PrintWriter(s.getOutputStream(), true, StandardCharsets.UTF_8)) {
 
             String line = in.readLine();
-            if (line == null || line.isBlank()) {
-                out.println("ERROR empty");
-                return;
-            }
-            out.println(handler.apply(line.trim()));
-        } catch (IOException e) {
-            System.err.println("[" + name + "] falha: " + e.getMessage());
+            out.println(handler.handleLine(line, TransportProtocol.TCP));
+        } catch (Exception e) {
+            System.err.println("[lab-tcp] falha: " + e.getMessage());
         }
     }
 }

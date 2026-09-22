@@ -1,4 +1,4 @@
-package br.imd.ufrn.lab.instance;
+package br.imd.ufrn.instance;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,9 +8,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Lado da instância: REGISTER + HEARTBEAT para o gateway (:9000).
- */
 public class HeartbeatClient {
 
     private static final int HEARTBEAT_INTERVAL_MS = 3_000;

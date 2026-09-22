@@ -1,4 +1,4 @@
-package br.imd.ufrn.lab.instance;
+package br.imd.ufrn.instance;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

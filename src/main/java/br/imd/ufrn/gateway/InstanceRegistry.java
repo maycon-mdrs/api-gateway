@@ -1,6 +1,6 @@
-package br.imd.ufrn.lab.gateway;
+package br.imd.ufrn.gateway;
 
-import br.imd.ufrn.lab.model.InstanceInfo;
+import br.imd.ufrn.model.InstanceInfo;
 
 import java.util.ArrayList;
 import java.util.List;

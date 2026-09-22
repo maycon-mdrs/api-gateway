@@ -1,56 +1,60 @@
 # api-gateway
 
-Sistema distribuído Camarões: API Gateway com heartbeat (TCP/HTTP primeiro).
+Sistema distribuído mínimo: API Gateway + instâncias de horário BR/PT.
+Protocolos HTTP, UDP e TCP ponta a ponta (mesmo protocolo da entrada até a instância).
+gRPC fora do escopo atual.
 
 ## Pré-requisitos
 
-- JDK 21+
-- Maven 3.8+
+- JDK 21+ (testado com 22)
+- Lombok no Maven local (só para compilar `InstanceInfo`)
 
 ## Compilar
 
-```bash
-mvn -q -DskipTests compile
+```powershell
+.\scripts\lab-start.ps1
 ```
 
-## Subir (3 terminais)
+Ou manualmente:
 
-```bash
-# 1) Gateway
-java -cp target/classes br.imd.ufrn.Main gateway
-
-# 2) Componente tables (pode subir várias instâncias)
-java -cp target/classes br.imd.ufrn.Main tables 9101
-java -cp target/classes br.imd.ufrn.Main tables 9102
-
-# 3) Componente reservations
-java -cp target/classes br.imd.ufrn.Main reservations 9201
+```powershell
+mkdir -Force target\classes | Out-Null
+$lombok = "$env:USERPROFILE\.m2\repository\org\projectlombok\lombok\1.18.38\lombok-1.18.38.jar"
+javac -encoding UTF-8 -cp $lombok -processorpath $lombok -d target\classes `
+  (Get-ChildItem -Recurse src\main\java\br\imd\ufrn -Filter *.java | ForEach-Object FullName)
 ```
 
-## Portas do gateway
+## Subir
 
-| Função | Porta |
-|--------|-------|
-| Controle (REGISTER / HEARTBEAT) | TCP 7000 |
-| Clientes TCP | TCP 9091 |
-| Clientes HTTP | HTTP 8080 |
-
-## Testes rápidos
-
-```bash
-curl http://127.0.0.1:8080/registry
-curl http://127.0.0.1:8080/tables
+```powershell
+.\scripts\lab-start.ps1
 ```
 
-TCP (payload de uma linha):
+Manual (um processo = um `Main`):
 
-```text
-ROUTE tables LIST
+```powershell
+java -cp target\classes br.imd.ufrn.Main gateway
+java -cp target\classes br.imd.ufrn.Main br br-1 9101
+java -cp target\classes br.imd.ufrn.Main br br-2 9102
+java -cp target\classes br.imd.ufrn.Main pt pt-1 9201
 ```
 
-## Heartbeat
+## Portas
 
-1. Ao iniciar, o componente envia `REGISTER type host port instanceId` na porta 7000.
-2. A cada 1s envia `HEARTBEAT instanceId`.
-3. Se o gateway não receber heartbeat em 5s, remove a instância da tabela.
-4. Requisições só são encaminhadas para instâncias vivas.
+| Porta | Papel |
+|------:|-------|
+| 9000 | REGISTER / HEARTBEAT |
+| 8080 | Cliente HTTP (`GET /time/br`, `/time/pt`, `/registry`) |
+| 9090 | Cliente UDP (`TIME br\|pt`) |
+| 9091 | Cliente TCP (`TIME br\|pt`) |
+| 91xx / 92xx | Instâncias BR / PT |
+
+## Testar
+
+```powershell
+.\scripts\lab-time.ps1 br
+.\scripts\lab-udp.ps1 br
+curl http://127.0.0.1:8080/time/br
+```
+
+Demo de falha: `scripts/lab-kill-demo.md`

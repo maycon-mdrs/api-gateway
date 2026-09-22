@@ -8,19 +8,18 @@ if (Test-Path "$jdk22\bin\java.exe") {
     $env:PATH = "$jdk22\bin;$env:PATH"
 }
 
-$outDir = Join-Path $root "target\lab-classes"
+$outDir = Join-Path $root "target\classes"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-$sources = Get-ChildItem -Recurse (Join-Path $root "src\main\java\br\imd\ufrn\lab") -Filter *.java | ForEach-Object FullName
-Write-Host "Compilando lab ($($sources.Count) arquivos)..." -ForegroundColor Cyan
+$sources = Get-ChildItem -Recurse (Join-Path $root "src\main\java\br\imd\ufrn") -Filter *.java | ForEach-Object FullName
+Write-Host "Compilando ($($sources.Count) arquivos)..." -ForegroundColor Cyan
 
-# Lombok opcional (InstanceInfo usa @Getter)
 $lombok = Join-Path $env:USERPROFILE ".m2\repository\org\projectlombok\lombok\1.18.38\lombok-1.18.38.jar"
 if (-not (Test-Path $lombok)) {
     $lombok = Join-Path $env:USERPROFILE ".m2\repository\org\projectlombok\lombok\1.18.30\lombok-1.18.30.jar"
 }
 $javacArgs = @("-encoding", "UTF-8", "-d", $outDir)
 if (Test-Path $lombok) {
-    $javacArgs += @("-cp", $lombok)
+    $javacArgs += @("-cp", $lombok, "-processorpath", $lombok)
 }
 $javacArgs += $sources
 & javac @javacArgs
@@ -34,11 +33,11 @@ function Start-LabWindow([string]$Title, [string[]]$JavaArgs) {
     Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd
 }
 
-Start-LabWindow "lab-gateway" @("br.imd.ufrn.lab.gateway.GatewayMain")
+Start-LabWindow "gateway" @("br.imd.ufrn.Main", "gateway")
 Start-Sleep -Seconds 2
-Start-LabWindow "lab-br-1" @("br.imd.ufrn.lab.instance.InstanceMain", "br", "br-1", "9101")
-Start-LabWindow "lab-br-2" @("br.imd.ufrn.lab.instance.InstanceMain", "br", "br-2", "9102")
-Start-LabWindow "lab-pt-1" @("br.imd.ufrn.lab.instance.InstanceMain", "pt", "pt-1", "9201")
+Start-LabWindow "br-1" @("br.imd.ufrn.Main", "br", "br-1", "9101")
+Start-LabWindow "br-2" @("br.imd.ufrn.Main", "br", "br-2", "9102")
+Start-LabWindow "pt-1" @("br.imd.ufrn.Main", "pt", "pt-1", "9201")
 
 Write-Host "Processos abertos."
 Write-Host "  TCP:  .\scripts\lab-time.ps1 br"
