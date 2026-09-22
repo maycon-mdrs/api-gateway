@@ -1,65 +1,69 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Lab BR/PT — TCP + HTTP + UDP">
-      <stringProp name="TestPlan.comments">Roda em sequência: TCP → HTTP → UDP. Espere o teste TERMINAR para ver as 3 linhas no Sumário. UDP usa jp@gc - UDP Request (plugin).</stringProp>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="API Gateway BR/PT — TCP + HTTP + UDP">
       <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Variáveis Definidas Pelo Usuário">
         <collectionProp name="Arguments.arguments">
+          <elementProp name="gatewayHost" elementType="Argument">
+            <stringProp name="Argument.name">gatewayHost</stringProp>
+            <stringProp name="Argument.value">18.219.12.66</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+            <stringProp name="Argument.desc">IP/hostname do API Gateway (IP público da EC2; trocar se reiniciar sem Elastic IP). Local: 127.0.0.1</stringProp>
+          </elementProp>
           <elementProp name="users" elementType="Argument">
             <stringProp name="Argument.name">users</stringProp>
-            <stringProp name="Argument.value">10</stringProp>
+            <stringProp name="Argument.value">8</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
-            <stringProp name="Argument.desc">Threads (comece com 10 para Error%=0; suba aos poucos no knee)</stringProp>
+            <stringProp name="Argument.desc">Threads (&gt;5 e menor que o Knee Capacity; usable demo=8 com Error%≈0)</stringProp>
           </elementProp>
           <elementProp name="ramp" elementType="Argument">
             <stringProp name="Argument.name">ramp</stringProp>
-            <stringProp name="Argument.value">10</stringProp>
+            <stringProp name="Argument.value">5</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">Segundos para subir todos os users</stringProp>
           </elementProp>
           <elementProp name="duration" elementType="Argument">
             <stringProp name="Argument.name">duration</stringProp>
-            <stringProp name="Argument.value">60</stringProp>
+            <stringProp name="Argument.value">20</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">Segundos de carga POR protocolo (TCP, HTTP e UDP). Total ≈ 3 × duration</stringProp>
           </elementProp>
         </collectionProp>
       </elementProp>
-      <boolProp name="TestPlan.functional_mode">false</boolProp>
     </TestPlan>
     <hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="1 — TCP :9091">
-        <stringProp name="ThreadGroup.num_threads">${users}</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">${ramp}</stringProp>
-        <stringProp name="ThreadGroup.duration">${duration}</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(users,${users})}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(ramp,${ramp})}</stringProp>
+        <stringProp name="ThreadGroup.duration">${__P(duration,${duration})}</stringProp>
         <longProp name="ThreadGroup.delay">0</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Controlador de Iteração">
           <intProp name="LoopController.loops">-1</intProp>
-          <boolProp name="LoopController.continue_forever">true</boolProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP TIME br" enabled="true">
+        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP TIME br">
           <stringProp name="TCPSampler.classname">TCPClientImpl</stringProp>
-          <stringProp name="TCPSampler.server">127.0.0.1</stringProp>
-          <boolProp name="TCPSampler.reUseConnection">true</boolProp>
+          <stringProp name="TCPSampler.server">${__P(gatewayHost,${gatewayHost})}</stringProp>
+          <boolProp name="TCPSampler.reUseConnection">false</boolProp>
           <stringProp name="TCPSampler.port">9091</stringProp>
           <boolProp name="TCPSampler.nodelay">false</boolProp>
           <stringProp name="TCPSampler.timeout">5000</stringProp>
           <stringProp name="TCPSampler.ctimeout">2000</stringProp>
           <stringProp name="TCPSampler.request">TIME br
 </stringProp>
-          <boolProp name="TCPSampler.closeConnection">false</boolProp>
+          <boolProp name="TCPSampler.closeConnection">true</boolProp>
           <stringProp name="TCPSampler.EolByte">10</stringProp>
           <stringProp name="ConfigTestElement.username"></stringProp>
           <stringProp name="ConfigTestElement.password"></stringProp>
         </TCPSampler>
         <hashTree/>
-        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário TCP" enabled="true">
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário TCP">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -96,7 +100,7 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore TCP" enabled="true">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore TCP">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -134,24 +138,24 @@
         </ResultCollector>
         <hashTree/>
       </hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="2 — HTTP :8080" enabled="true">
-        <stringProp name="ThreadGroup.num_threads">${users}</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">${ramp}</stringProp>
-        <stringProp name="ThreadGroup.duration">${duration}</stringProp>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="2 — HTTP :8080">
+        <stringProp name="ThreadGroup.num_threads">${__P(users,${users})}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(ramp,${ramp})}</stringProp>
+        <stringProp name="ThreadGroup.duration">${__P(duration,${duration})}</stringProp>
         <longProp name="ThreadGroup.delay">0</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Controlador de Iteração">
           <intProp name="LoopController.loops">-1</intProp>
-          <boolProp name="LoopController.continue_forever">true</boolProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP GET /time/br" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP GET /time/br">
           <intProp name="HTTPSampler.connect_timeout">2000</intProp>
           <intProp name="HTTPSampler.response_timeout">5000</intProp>
-          <stringProp name="HTTPSampler.domain">127.0.0.1</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(gatewayHost,${gatewayHost})}</stringProp>
           <stringProp name="HTTPSampler.port">8080</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
           <stringProp name="HTTPSampler.path">/time/br</stringProp>
@@ -164,7 +168,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário HTTP" enabled="true">
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário HTTP">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -201,7 +205,7 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore HTTP" enabled="true">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore HTTP">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -239,22 +243,22 @@
         </ResultCollector>
         <hashTree/>
       </hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="3 — UDP :9090" enabled="true">
-        <stringProp name="ThreadGroup.num_threads">${users}</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">${ramp}</stringProp>
-        <stringProp name="ThreadGroup.duration">${duration}</stringProp>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="3 — UDP :9090">
+        <stringProp name="ThreadGroup.num_threads">${__P(users,${users})}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(ramp,${ramp})}</stringProp>
+        <stringProp name="ThreadGroup.duration">${__P(duration,${duration})}</stringProp>
         <longProp name="ThreadGroup.delay">0</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Controlador de Iteração">
           <intProp name="LoopController.loops">-1</intProp>
-          <boolProp name="LoopController.continue_forever">true</boolProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <kg.apc.jmeter.samplers.UDPSampler guiclass="kg.apc.jmeter.samplers.UDPSamplerGui" testclass="kg.apc.jmeter.samplers.UDPSampler" testname="jp@gc - UDP TIME br" enabled="true">
-          <stringProp name="hostname">127.0.0.1</stringProp>
+        <kg.apc.jmeter.samplers.UDPSampler guiclass="kg.apc.jmeter.samplers.UDPSamplerGui" testclass="kg.apc.jmeter.samplers.UDPSampler" testname="jp@gc - UDP TIME br">
+          <stringProp name="hostname">${__P(gatewayHost,${gatewayHost})}</stringProp>
           <stringProp name="port">9090</stringProp>
           <boolProp name="waitresponse">true</boolProp>
           <boolProp name="closechannel">false</boolProp>
@@ -265,7 +269,7 @@
           <stringProp name="bind_port"></stringProp>
         </kg.apc.jmeter.samplers.UDPSampler>
         <hashTree/>
-        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário UDP" enabled="true">
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário UDP">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -302,7 +306,7 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore UDP" enabled="true">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore UDP">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -340,7 +344,7 @@
         </ResultCollector>
         <hashTree/>
       </hashTree>
-      <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.TransactionsPerSecondGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Transactions per Second" enabled="true">
+      <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.TransactionsPerSecondGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Transactions per Second">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
           <name>saveConfig</name>
@@ -385,7 +389,7 @@
         <boolProp name="exclude_checkbox_state">false</boolProp>
       </kg.apc.jmeter.vizualizers.CorrectedResultCollector>
       <hashTree/>
-      <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.ResponseTimesOverTimeGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Response Times Over Time" enabled="true">
+      <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.ResponseTimesOverTimeGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Response Times Over Time">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
           <name>saveConfig</name>

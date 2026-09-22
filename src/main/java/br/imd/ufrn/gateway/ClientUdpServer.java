@@ -1,4 +1,4 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -19,7 +19,7 @@ public class ClientUdpServer implements Runnable {
     @Override
     public void run() {
         try (DatagramSocket socket = new DatagramSocket(port)) {
-            System.out.println("[lab-udp] ouvindo UDP " + port);
+            System.out.println("[udp] ouvindo UDP " + port);
             byte[] buffer = new byte[2048];
             while (!Thread.currentThread().isInterrupted()) {
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length);
@@ -37,7 +37,7 @@ public class ClientUdpServer implements Runnable {
                 socket.send(responsePacket);
             }
         } catch (IOException e) {
-            System.err.println("[lab-udp] erro: " + e.getMessage());
+            System.err.println("[udp] erro: " + e.getMessage());
         }
     }
 }

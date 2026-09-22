@@ -1,4 +1,4 @@
-# Abre gateway + 2 instancias BR + 1 PT em janelas separadas (Windows).
+# Abre gateway + 2 instancias BR + 2 PT em janelas separadas (Windows).
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
@@ -25,7 +25,7 @@ $javacArgs += $sources
 & javac @javacArgs
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-function Start-LabWindow([string]$Title, [string[]]$JavaArgs) {
+function Start-AppWindow([string]$Title, [string[]]$JavaArgs) {
     $java = if (Test-Path "$jdk22\bin\java.exe") { "$jdk22\bin\java.exe" } else { "java" }
     $argList = @("-cp", $outDir) + $JavaArgs
     $joined = ($argList | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
@@ -33,14 +33,15 @@ function Start-LabWindow([string]$Title, [string[]]$JavaArgs) {
     Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd
 }
 
-Start-LabWindow "gateway" @("br.imd.ufrn.Main", "gateway")
+Start-AppWindow "gateway" @("br.imd.ufrn.Main", "gateway")
 Start-Sleep -Seconds 2
-Start-LabWindow "br-1" @("br.imd.ufrn.Main", "br", "br-1", "9101")
-Start-LabWindow "br-2" @("br.imd.ufrn.Main", "br", "br-2", "9102")
-Start-LabWindow "pt-1" @("br.imd.ufrn.Main", "pt", "pt-1", "9201")
+Start-AppWindow "br-1" @("br.imd.ufrn.Main", "br", "br-1", "9101")
+Start-AppWindow "br-2" @("br.imd.ufrn.Main", "br", "br-2", "9102")
+Start-AppWindow "pt-1" @("br.imd.ufrn.Main", "pt", "pt-1", "9201")
+Start-AppWindow "pt-2" @("br.imd.ufrn.Main", "pt", "pt-2", "9202")
 
 Write-Host "Processos abertos."
-Write-Host "  TCP:  .\scripts\lab-time.ps1 br"
+Write-Host "  TCP:  .\scripts\client-tcp.ps1 br"
 Write-Host "  HTTP: curl http://127.0.0.1:8080/time/br"
-Write-Host "  UDP:  .\scripts\lab-udp.ps1 br"
-Write-Host "Demo kill: veja scripts\lab-kill-demo.md"
+Write-Host "  UDP:  .\scripts\client-udp.ps1 br"
+Write-Host "Demo kill: veja scripts\kill-demo.md"

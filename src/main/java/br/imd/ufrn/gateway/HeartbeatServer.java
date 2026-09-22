@@ -1,4 +1,4 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
 import br.imd.ufrn.model.InstanceInfo;
 
@@ -27,14 +27,14 @@ public class HeartbeatServer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("[lab-heartbeat] ouvindo TCP " + port);
+            System.out.println("[heartbeat] ouvindo TCP " + port);
 
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = serverSocket.accept();
                 pool.execute(() -> handleConnection(socket));
             }
         } catch (IOException e) {
-            System.err.println("[lab-heartbeat] erro: " + e.getMessage());
+            System.err.println("[heartbeat] erro: " + e.getMessage());
         }
     }
 
@@ -52,7 +52,7 @@ public class HeartbeatServer implements Runnable {
 
             out.println(processCommandLine(line.trim()));
         } catch (Exception e) {
-            System.err.println("[lab-heartbeat] falha: " + e.getMessage());
+            System.err.println("[heartbeat] falha: " + e.getMessage());
         }
     }
 

@@ -1,4 +1,4 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,7 +32,7 @@ public class GatewayMain {
     }
 
     public void start() {
-        System.out.println("[lab-gateway] iniciando...");
+        System.out.println("[gateway] iniciando...");
         System.out.println("  heartbeat: TCP " + HEARTBEAT_PORT);
         System.out.println("  cliente:   HTTP " + CLIENT_HTTP_PORT + " (forward HTTP)");
         System.out.println("  cliente:   UDP " + CLIENT_UDP_PORT + " (forward UDP)");
@@ -41,10 +41,10 @@ public class GatewayMain {
 
         cleaner.scheduleAtFixedRate(registry::removeDeadInstances, 1, 1, TimeUnit.SECONDS);
 
-        Thread heartbeat = new Thread(new HeartbeatServer(HEARTBEAT_PORT, registry), "lab-heartbeat");
-        Thread http = new Thread(new ClientHttpServer(CLIENT_HTTP_PORT, handler, registry), "lab-http");
-        Thread udp = new Thread(new ClientUdpServer(CLIENT_UDP_PORT, handler), "lab-udp");
-        Thread tcp = new Thread(new ClientTcpServer(CLIENT_TCP_PORT, handler), "lab-tcp");
+        Thread heartbeat = new Thread(new HeartbeatServer(HEARTBEAT_PORT, registry), "heartbeat");
+        Thread http = new Thread(new ClientHttpServer(CLIENT_HTTP_PORT, handler, registry), "http");
+        Thread udp = new Thread(new ClientUdpServer(CLIENT_UDP_PORT, handler), "udp");
+        Thread tcp = new Thread(new ClientTcpServer(CLIENT_TCP_PORT, handler), "tcp");
 
         heartbeat.start();
         http.start();

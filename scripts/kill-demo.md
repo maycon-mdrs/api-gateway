@@ -1,13 +1,13 @@
-# Demo: matar e recuperar instância (lab)
+# Demo: matar e recuperar instância
 
-Pré-requisito: gateway + `br-1` + `br-2` rodando (ver `lab-start.ps1`).
+Pré-requisito: gateway + `br-1` + `br-2` rodando (ver `scripts/start.ps1`).
 
 ## 1. Ver round-robin
 
 Num loop, rode:
 
 ```powershell
-1..6 | ForEach-Object { .\scripts\lab-time.ps1 br; Start-Sleep -Milliseconds 200 }
+1..6 | ForEach-Object { .\scripts\client-tcp.ps1 br; Start-Sleep -Milliseconds 200 }
 ```
 
 No terminal do gateway, os logs devem alternar `br-1` e `br-2`.
@@ -25,7 +25,7 @@ Espere ~6 segundos. No gateway deve aparecer:
 ## 3. Pedidos ainda funcionam
 
 ```powershell
-.\scripts\lab-time.ps1 br
+.\scripts\client-tcp.ps1 br
 ```
 
 Deve responder `OK ...` só via `br-1`.
@@ -35,7 +35,7 @@ Deve responder `OK ...` só via `br-1`.
 Ctrl+C em `br-1`. Depois:
 
 ```powershell
-.\scripts\lab-time.ps1 br
+.\scripts\client-tcp.ps1 br
 ```
 
 Esperado: `ERROR no healthy instance for br`

@@ -1,19 +1,41 @@
-protocolo,users,throughput,average_ms,error_pct,observacao
-TCP,5,,,,
-TCP,10,,,,
-TCP,20,,,,
-TCP,40,,,,
-TCP,60,,,,
-TCP,80,,,,
-HTTP,5,,,,
-HTTP,10,,,,
-HTTP,20,,,,
-HTTP,40,,,,
-HTTP,60,,,,
-HTTP,80,,,,
-UDP,5,,,,
-UDP,10,,,,
-UDP,20,,,,
-UDP,40,,,,
-UDP,60,,,,
-UDP,80,,,,
+﻿protocolo,users,throughput,average_ms,error_pct,observacao
+TCP,1,4.5,222.19,0,n=70 linear
+HTTP,1,4.7,212.59,0,n=71 linear
+UDP,1,9.53,104.74,0,n=143
+TCP,2,9.33,210.44,0,n=141 linear
+HTTP,2,9.36,209.4,0,n=141 linear
+UDP,2,10.9,171.21,1.408,n=213
+TCP,3,13.72,213.32,0,n=208 linear
+HTTP,3,13.67,214.67,0,n=206 linear
+UDP,3,25.13,116.61,0.264,n=379
+TCP,5,22.57,214.27,0,n=343 KNEE thr TCP/HTTP (platô ~22 req/s)
+HTTP,5,21.82,222.19,0,n=330 KNEE thr TCP/HTTP
+UDP,5,44.22,109.92,0.15,n=665
+TCP,8,21.68,343.94,0.285,n=351 USABLE demo (>5; Error~0; latencia sobe)
+HTTP,8,21.61,340.69,0,n=349 USABLE demo
+UDP,8,65.44,106.85,0.09,n=1110 USABLE demo
+TCP,10,21.81,420.88,0.567,n=353 latencia ~2x; erro ainda <1%
+HTTP,10,21.89,430.42,0.283,n=353
+UDP,10,94.87,102.06,0,n=1427
+TCP,15,22.36,584.48,3.233,n=464 degradacao: Error>1%
+HTTP,15,21.04,600.92,1.101,n=454 degradacao
+UDP,15,124.51,106.35,0.08,n=2497
+TCP,20,22.49,771.31,4.211,n=475
+HTTP,20,22.54,771.88,4.008,n=474
+UDP,20,154.31,113.97,0.258,n=3102
+TCP,30,23.04,1096.88,6.387,n=501
+HTTP,30,22.86,1110.27,5.645,n=496
+UDP,30,250.83,104.9,0.079,n=5041
+TCP,40,23.59,1416.19,9.733,n=524
+HTTP,40,24.1,1398.57,10.546,n=531
+UDP,40,303.79,103.94,0.059,n=6801
+TCP,50,24.31,1563.88,11.594,n=552
+HTTP,50,24.18,1595.2,10.967,n=538
+UDP,50,388.94,103.15,0.038,n=7813 soft-knee UDP (~390 req/s)
+TCP,60,26.2,1766.38,17.295,n=584 Error~17%
+HTTP,60,25.48,1759.63,17.458,n=590
+UDP,60,390.59,111.4,0.206,n=8755 platô UDP
+TCP,80,28.34,2133.65,23.853,n=654 Error~24%
+HTTP,80,28.76,2116.88,24.848,n=660
+UDP,80,508.37,111.33,0.196,n=11754 UDP ainda sobe; erro baixo
+# PC->EC2 us-east-2 | duration=20s | 4 workers (br-1/2 + pt-1/2) | demo avaliacao: users=8

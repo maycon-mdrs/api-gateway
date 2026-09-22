@@ -1,4 +1,4 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,13 +24,13 @@ public class ClientTcpServer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("[lab-tcp] ouvindo TCP " + port);
+            System.out.println("[tcp] ouvindo TCP " + port);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = serverSocket.accept();
                 pool.execute(() -> handle(socket));
             }
         } catch (IOException e) {
-            System.err.println("[lab-tcp] erro: " + e.getMessage());
+            System.err.println("[tcp] erro: " + e.getMessage());
         }
     }
 
@@ -43,7 +43,7 @@ public class ClientTcpServer implements Runnable {
             String line = in.readLine();
             out.println(handler.handleLine(line, TransportProtocol.TCP));
         } catch (Exception e) {
-            System.err.println("[lab-tcp] falha: " + e.getMessage());
+            System.err.println("[tcp] falha: " + e.getMessage());
         }
     }
 }

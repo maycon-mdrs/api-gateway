@@ -1,4 +1,4 @@
-package br.imd.ufrn.instance;
+﻿package br.imd.ufrn.instance;
 
 import br.imd.ufrn.gateway.GatewayMain;
 
@@ -26,7 +26,7 @@ public class InstanceMain {
         String gatewayHost = args.length > 3 ? args[3] : "127.0.0.1";
         String advertiseHost = args.length > 4 ? args[4] : "127.0.0.1";
 
-        System.out.println("[lab-instance] " + instanceId
+        System.out.println("[instance] " + instanceId
                 + " tipo=" + serviceType
                 + " porta=" + listenPort
                 + " (TCP/HTTP + UDP)");
@@ -42,7 +42,7 @@ public class InstanceMain {
 
         Thread udp = new Thread(
                 new InstanceUdpServer(instanceId, serviceType, listenPort),
-                "lab-udp-" + instanceId);
+                "udp-" + instanceId);
         udp.start();
 
         new InstanceTcpServer(instanceId, serviceType, listenPort).run();

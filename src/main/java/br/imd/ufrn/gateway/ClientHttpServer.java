@@ -1,4 +1,4 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
 import br.imd.ufrn.model.InstanceInfo;
 
@@ -29,13 +29,13 @@ public class ClientHttpServer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("[lab-http] ouvindo HTTP " + port);
+            System.out.println("[http] ouvindo HTTP " + port);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = serverSocket.accept();
                 pool.execute(() -> handle(socket));
             }
         } catch (IOException e) {
-            System.err.println("[lab-http] erro: " + e.getMessage());
+            System.err.println("[http] erro: " + e.getMessage());
         }
     }
 
@@ -99,7 +99,7 @@ public class ClientHttpServer implements Runnable {
 
             sendResponse(s, 404, "Not Found\n");
         } catch (Exception e) {
-            System.err.println("[lab-http] falha: " + e.getMessage());
+            System.err.println("[http] falha: " + e.getMessage());
         }
     }
 

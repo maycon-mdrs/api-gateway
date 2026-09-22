@@ -1,4 +1,4 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
 import br.imd.ufrn.model.InstanceInfo;
 
@@ -44,7 +44,7 @@ public class TimeRequestHandler {
 
         InstanceInfo instance = target.get();
         String payload = "TIME " + normalized;
-        System.out.println("[lab-route] " + protocol + " " + payload + " -> " + instance);
+        System.out.println("[route] " + protocol + " " + payload + " -> " + instance);
         try {
             return switch (protocol) {
                 case TCP -> tcpForwarder.forward(instance, payload);

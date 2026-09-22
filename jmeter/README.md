@@ -1,80 +1,114 @@
-# JMeter — Lab BR/PT
+# JMeter — API Gateway BR/PT (avaliação)
 
-## Arquivo principal: `lab-completo.jmx`
+Scripts de carga para o API Gateway (HTTP `:8080`, TCP `:9091`, UDP `:9090`).
+
+## Planos
+
+| Arquivo | Uso |
+|---------|-----|
+| [`carga-completa.jmx`](carga-completa.jmx) | TCP → HTTP → UDP em sequência (avaliação / Sigaa) |
+| [`carga-tcp.jmx`](carga-tcp.jmx) | **Só TCP** — prints e knee isolados |
+| [`carga-http.jmx`](carga-http.jmx) | **Só HTTP** |
+| [`carga-udp.jmx`](carga-udp.jmx) | **Só UDP** (plugin jp@gc; stress alto ok) |
+
+### `carga-completa.jmx`
 
 ```text
-Lab BR/PT — TCP + HTTP + UDP
- ├── variáveis: users, ramp, loops
+API Gateway BR/PT — TCP + HTTP + UDP
+ ├── variáveis: gatewayHost, users, ramp, duration
  ├── 1 — TCP :9091     → Sumário TCP + Árvore TCP
  ├── 2 — HTTP :8080    → Sumário HTTP + Árvore HTTP
- ├── 3 — UDP :9090     → Sumário UDP + Árvore UDP  (jp@gc - UDP Request)
+ ├── 3 — UDP :9090     → Sumário UDP + Árvore UDP
  ├── jp@gc - Transactions per Second
  └── jp@gc - Response Times Over Time
 ```
 
-Roda em sequência (TCP → HTTP → UDP). Espere o teste **terminar**.
+Roda em sequência. **Use o mesmo `users` nos três** — para demo sem erro: **`users=8`**. Não use 200 no completo (TCP/HTTP saturam).
 
-**Duração (variáveis do Plano de Teste):**
+### Planos isolados (`carga-tcp` / `carga-http` / `carga-udp`)
 
-| Variável | Valor | Efeito |
-|----------|------:|--------|
-| `users` | 20 | threads simultâneos |
-| `ramp` | 10 | sobe a carga em 10 s |
-| `duration` | **60** | cada protocolo roda **60 segundos** |
+Mesmas variáveis e listeners (Sumário, Árvore, TPS, Response Times). Ideal para prints por protocolo sem um afetar o outro.
 
-Total ≈ **3 × 60 ≈ 3 minutos** (TCP + HTTP + UDP em sequência).  
-Nos seus gráficos (~200 req/s), `loops=100` acabava em ~10 s por protocolo — por isso parecia rápido.
+## Pré-requisitos
 
-Para alongar mais: suba `duration` para `120` ou `180` no Plano de Teste.
+- JMeter 5.6+ (ex.: `C:\apache-jmeter-5.6.3`)
+- Plugin **jp@gc - UDP Request** (só para `carga-udp` / `carga-completa`)
+- App no ar na EC2 — ver [`../ambiente-aws.md`](../ambiente-aws.md)
+- Security Group: **8080/TCP**, **9091/TCP**, **9090/UDP** (+ SSH)
 
-## Gráficos ao vivo (JMeter)
+## Variáveis
 
-| Listener | O que mostra |
-|----------|----------------|
-| Transactions per Second | throughput ao longo do tempo |
-| Response Times Over Time | latência ao longo do tempo |
+| Nome | Default | Efeito |
+|------|--------:|--------|
+| `gatewayHost` | IP público EC2 | host do gateway |
+| `users` | 8 | threads (**>5** e &lt; knee; usable) |
+| `ramp` | 5 | segundos para subir os users |
+| `duration` | 20 | segundos de carga (demo: 60) |
 
-Isso é parecido com o slide, mas o eixo X é **tempo**, não **carga**.
+CLI: `-J` via `__P`:
 
-## Gráficos Knee / Usable (slide do curso) → Excel
-
-O slide tem eixo X = **Load** (usuários). O JMeter **não desenha** Knee/Usable sozinho: você monta com várias rodadas.
-
-### 1. Coletar dados
-
-1. Abra `knee-usable-template.csv` (Excel / Google Sheets)
-2. No plano, mude `users`: 5 → 10 → 20 → 40 → 60 → 80
-3. A cada rodada, no **Sumário** de cada protocolo anote:
-   - Throughput → coluna `throughput`
-   - Average → coluna `average_ms`
-   - Error % → coluna `error_pct`
-
-### 2. Montar os 2 gráficos (por protocolo)
-
-**Gráfico 1 — Throughput vs Load**
-- X = `users`
-- Y = `throughput`
-- Marque:
-  - **Knee**: onde a curva **desvia** da subida linear (começa a achatar)
-  - **Usable capacity**: próximo do **pico** de throughput (antes de cair / explodir erro)
-  - Depois do usable: throughput cai ou fica instável
-
-**Gráfico 2 — Response Time vs Load**
-- X = `users`
-- Y = `average_ms`
-- Antes do knee: latência baixa/estável
-- Depois do usable: latência sobe forte (como no slide)
-
-Repita **3 vezes** (TCP, HTTP, UDP) — o enunciado pede por protocolo.
-
-### 3. Como ler (igual ao slide)
-
-```text
-Load baixa ──► knee ──► usable (pico) ──► saturação
-                 │              │
-                 │              └─ throughput máximo útil
-                 └─ começa a desviar do ideal
+```powershell
+jmeter -n -t carga-tcp.jmx "-JgatewayHost=IP" "-Jusers=8" "-Jramp=5" "-Jduration=20"
 ```
+
+## Como executar (GUI) — prints
+
+1. Abrir o `.jmx` do protocolo (ou o completo).
+2. Conferir `gatewayHost` (IP público atual).
+3. **Saudável:** `users=8`, `duration=60` → Error % ≈ 0.
+4. **Erro TCP/HTTP:** `users=15` (ou 20) no `carga-tcp` / `carga-http`.
+5. **UDP stress:** `carga-udp.jmx` com `users=200` ainda Error ≈ 0–0,3%.
+6. Print do Sumário (Error %, Vazão, KB/s, Sent KB/sec) + TPS se quiser.
+
+| users | TCP/HTTP Error % (remoto) | Uso |
+|------:|--------------------------:|-----|
+| **8** | ≈ **0** | demo / enunciado |
+| 10 | &lt; 1% | limite fino |
+| **15** | **&gt; 1%** | erro começa |
+| 20+ | sobe até ~25% em 80 | saturação |
+
+## CLI (exemplos)
+
+```powershell
+cd C:\Users\mayco\OneDrive\Documentos\UF\api-gateway\jmeter
+
+# demo completo (avaliação)
+jmeter -n -t carga-completa.jmx `
+  "-JgatewayHost=18.219.12.66" `
+  "-Jusers=8" "-Jramp=8" "-Jduration=60" `
+  -l results-demo-u8.jtl
+
+# só TCP com erro
+jmeter -n -t carga-tcp.jmx `
+  "-JgatewayHost=18.219.12.66" `
+  "-Jusers=15" "-Jramp=5" "-Jduration=20" `
+  -l results-tcp-u15.jtl
+
+# só UDP stress
+jmeter -n -t carga-udp.jmx `
+  "-JgatewayHost=18.219.12.66" `
+  "-Jusers=200" "-Jramp=5" "-Jduration=20" `
+  -l results-udp-u200.jtl
+```
+
+## Demo de tolerância a falhas
+
+Com `carga-completa` ou um isolado em `users=8`:
+
+1. Sumário com Error ≈ 0.
+2. Na EC2: `pkill -f "br-1 9101"` → erro sobe.
+3. `nohup java -cp target/classes br.imd.ufrn.Main br br-1 9101 > br-1.log 2>&1 &`
+4. Erros caem após REGISTER/heartbeat.
+
+## Knee / Usable
+
+Ver [`knee-usable-template.csv`](knee-usable-template.csv) e `docs/figuras/knee-*.png`.
+
+| | TCP / HTTP | UDP |
+|--|------------|-----|
+| **Knee** | ≈ **5** (platô ~22 req/s) | ≈ **50–60** (soft) |
+| **Usable (demo)** | **8** | **8** |
+| Degradação | Error>1% ≈**15** | Error baixo até 200 |
 
 ## UDP
 

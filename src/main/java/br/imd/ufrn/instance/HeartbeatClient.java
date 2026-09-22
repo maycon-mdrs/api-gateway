@@ -36,7 +36,7 @@ public class HeartbeatClient {
     }
 
     public void start() {
-        Thread thread = new Thread(this::loop, "lab-hb-" + instanceId);
+        Thread thread = new Thread(this::loop, "hb-" + instanceId);
         thread.setDaemon(true);
         thread.start();
     }

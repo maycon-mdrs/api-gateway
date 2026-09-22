@@ -7,15 +7,26 @@ gRPC fora do escopo atual.
 ## Pré-requisitos
 
 - JDK 21+ (testado com 22)
-- Lombok no Maven local (só para compilar `InstanceInfo`)
+- Maven 3.8+ (opcional; usado na EC2 / Amazon Linux)
+- Lombok no Maven local (só para compilar `InstanceInfo` via `javac` manual)
+
+Registro do ambiente AWS: [`ambiente-aws.md`](ambiente-aws.md).
 
 ## Compilar
 
-```powershell
-.\scripts\lab-start.ps1
+Com Maven:
+
+```bash
+mvn -DskipTests compile
 ```
 
-Ou manualmente:
+No Windows (script de start):
+
+```powershell
+.\scripts\start.ps1
+```
+
+Ou `javac` manualmente:
 
 ```powershell
 mkdir -Force target\classes | Out-Null
@@ -27,7 +38,7 @@ javac -encoding UTF-8 -cp $lombok -processorpath $lombok -d target\classes `
 ## Subir
 
 ```powershell
-.\scripts\lab-start.ps1
+.\scripts\start.ps1
 ```
 
 Manual (um processo = um `Main`):
@@ -37,6 +48,7 @@ java -cp target\classes br.imd.ufrn.Main gateway
 java -cp target\classes br.imd.ufrn.Main br br-1 9101
 java -cp target\classes br.imd.ufrn.Main br br-2 9102
 java -cp target\classes br.imd.ufrn.Main pt pt-1 9201
+java -cp target\classes br.imd.ufrn.Main pt pt-2 9202
 ```
 
 ## Portas
@@ -52,9 +64,11 @@ java -cp target\classes br.imd.ufrn.Main pt pt-1 9201
 ## Testar
 
 ```powershell
-.\scripts\lab-time.ps1 br
-.\scripts\lab-udp.ps1 br
+.\scripts\client-tcp.ps1 br
+.\scripts\client-udp.ps1 br
 curl http://127.0.0.1:8080/time/br
 ```
 
-Demo de falha: `scripts/lab-kill-demo.md`
+Demo de falha: `scripts/kill-demo.md`
+
+Carga JMeter: `jmeter/carga-completa.jmx` ou `carga-tcp` / `carga-http` / `carga-udp` — ver [`jmeter/README.md`](jmeter/README.md).

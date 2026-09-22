@@ -22,6 +22,12 @@
 # Maven
 target/
 
+# JMeter gerados (pesados)
+jmeter/results-*.jtl
+jmeter/report-*/
+jmeter/report-demo/
+jmeter/report-u*/
+
 # IDE
 .idea/
 *.iml
