@@ -40,3 +40,5 @@ replay_pid*
 
 /docs
 /aulas
+
+*.pem
