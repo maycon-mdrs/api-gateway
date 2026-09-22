@@ -8,18 +8,27 @@ import java.util.Optional;
 public class TimeRequestHandler {
 
     private final InstanceRegistry registry;
-    private final TcpForwarder forwarder;
+    private final TcpForwarder tcpForwarder;
+    private final UdpForwarder udpForwarder;
+    private final HttpForwarder httpForwarder;
 
-    public TimeRequestHandler(InstanceRegistry registry, TcpForwarder forwarder) {
+    public TimeRequestHandler(
+            InstanceRegistry registry,
+            TcpForwarder tcpForwarder,
+            UdpForwarder udpForwarder,
+            HttpForwarder httpForwarder) {
         this.registry = registry;
-        this.forwarder = forwarder;
+        this.tcpForwarder = tcpForwarder;
+        this.udpForwarder = udpForwarder;
+        this.httpForwarder = httpForwarder;
     }
 
     /**
-     * @param zone {@code "br"} ou {@code "pt"}
+     * @param zone     {@code "br"} ou {@code "pt"}
+     * @param protocol protocolo da entrada do cliente (mesmo até a instância)
      * @return linha de resposta ({@code OK ...} ou {@code ERROR ...})
      */
-    public String handleZone(String zone) {
+    public String handleZone(String zone, TransportProtocol protocol) {
         if (zone == null) {
             return "ERROR usage: TIME br|pt";
         }
@@ -35,9 +44,13 @@ public class TimeRequestHandler {
 
         InstanceInfo instance = target.get();
         String payload = "TIME " + normalized;
-        System.out.println("[lab-route] " + payload + " -> " + instance);
+        System.out.println("[lab-route] " + protocol + " " + payload + " -> " + instance);
         try {
-            return forwarder.forward(instance, payload);
+            return switch (protocol) {
+                case TCP -> tcpForwarder.forward(instance, payload);
+                case UDP -> udpForwarder.forward(instance, payload);
+                case HTTP -> httpForwarder.forward(instance, normalized);
+            };
         } catch (IOException e) {
             return "ERROR forward failed: " + e.getMessage();
         }
@@ -46,7 +59,7 @@ public class TimeRequestHandler {
     /**
      * Parse de linha {@code TIME br|pt} (TCP/UDP).
      */
-    public String handleLine(String line) {
+    public String handleLine(String line, TransportProtocol protocol) {
         if (line == null || line.isBlank()) {
             return "ERROR empty";
         }
@@ -55,6 +68,6 @@ public class TimeRequestHandler {
         if (parts.length < 2 || !"TIME".equalsIgnoreCase(parts[0])) {
             return "ERROR usage: TIME br|pt";
         }
-        return handleZone(parts[1]);
+        return handleZone(parts[1], protocol);
     }
 }

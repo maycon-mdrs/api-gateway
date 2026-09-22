@@ -1,6 +1,7 @@
 package br.imd.ufrn.lab.instance;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -10,11 +11,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Lado da instância: escuta a porta local e responde TIME br|pt.
+ * Lado da instância: escuta TCP na porta local.
+ * Aceita linha {@code TIME br|pt} ou HTTP {@code GET /time/br|pt}.
  */
 public class InstanceTcpServer implements Runnable {
 
@@ -38,7 +41,7 @@ public class InstanceTcpServer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
-            System.out.println("[" + instanceId + "] ouvindo TCP " + listenPort + " zone=" + zoneId);
+            System.out.println("[" + instanceId + "] ouvindo TCP/HTTP " + listenPort + " zone=" + zoneId);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = serverSocket.accept();
                 pool.execute(() -> handleRequest(socket));
@@ -51,31 +54,93 @@ public class InstanceTcpServer implements Runnable {
     private void handleRequest(Socket socket) {
         try (Socket s = socket;
              BufferedReader in = new BufferedReader(
-                     new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8));
-             PrintWriter out = new PrintWriter(s.getOutputStream(), true, StandardCharsets.UTF_8)) {
+                     new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8))) {
 
-            String line = in.readLine();
-            if (line == null || line.isBlank()) {
-                out.println("ERROR empty");
+            String firstLine = in.readLine();
+            if (firstLine == null || firstLine.isBlank()) {
+                writePlainLine(s, "ERROR empty");
                 return;
             }
 
-            String[] parts = line.trim().split("\\s+");
-            if (parts.length < 2 || !"TIME".equalsIgnoreCase(parts[0])) {
-                out.println("ERROR usage: TIME br|pt");
+            if (firstLine.toUpperCase().startsWith("GET ")) {
+                handleHttp(s, in, firstLine);
                 return;
             }
 
-            String requested = parts[1].toLowerCase();
-            if (!serviceType.equals(requested)) {
-                out.println("ERROR this instance is " + serviceType + ", got TIME " + requested);
-                return;
-            }
-
-            String now = ZonedDateTime.now(zoneId).format(FORMATTER);
-            out.println("OK " + now);
+            writePlainLine(s, answerTimeLine(firstLine));
         } catch (IOException e) {
             System.err.println("[" + instanceId + "] falha: " + e.getMessage());
         }
+    }
+
+    private void handleHttp(Socket socket, BufferedReader in, String requestLine) throws IOException {
+        String line;
+        while ((line = in.readLine()) != null && !line.isEmpty()) {
+            // ignora headers
+        }
+
+        StringTokenizer tokenizer = new StringTokenizer(requestLine);
+        if (tokenizer.countTokens() < 2) {
+            sendHttp(socket, 400, "Bad Request\n");
+            return;
+        }
+
+        tokenizer.nextToken();
+        String pathAndQuery = tokenizer.nextToken();
+        String path = pathAndQuery;
+        int q = pathAndQuery.indexOf('?');
+        if (q >= 0) {
+            path = pathAndQuery.substring(0, q);
+        }
+
+        if ("/time/br".equals(path) || "/time/pt".equals(path)) {
+            String zone = path.substring("/time/".length());
+            String body = answerZone(zone) + "\n";
+            int status = body.startsWith("OK ") ? 200 : 400;
+            sendHttp(socket, status, body);
+            return;
+        }
+
+        sendHttp(socket, 404, "Not Found\n");
+    }
+
+    private String answerTimeLine(String line) {
+        String[] parts = line.trim().split("\\s+");
+        if (parts.length < 2 || !"TIME".equalsIgnoreCase(parts[0])) {
+            return "ERROR usage: TIME br|pt";
+        }
+        return answerZone(parts[1].toLowerCase());
+    }
+
+    private String answerZone(String requested) {
+        if (!serviceType.equals(requested)) {
+            return "ERROR this instance is " + serviceType + ", got TIME " + requested;
+        }
+        String now = ZonedDateTime.now(zoneId).format(FORMATTER);
+        return "OK " + now;
+    }
+
+    private void writePlainLine(Socket socket, String response) throws IOException {
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8);
+        out.println(response);
+    }
+
+    private void sendHttp(Socket socket, int status, String body) throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        String statusText = switch (status) {
+            case 200 -> "OK";
+            case 400 -> "Bad Request";
+            case 404 -> "Not Found";
+            default -> "Error";
+        };
+
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        out.writeBytes("HTTP/1.0 " + status + " " + statusText + "\r\n");
+        out.writeBytes("Content-Type: text/plain; charset=utf-8\r\n");
+        out.writeBytes("Content-Length: " + bytes.length + "\r\n");
+        out.writeBytes("Connection: close\r\n");
+        out.writeBytes("\r\n");
+        out.write(bytes);
+        out.flush();
     }
 }

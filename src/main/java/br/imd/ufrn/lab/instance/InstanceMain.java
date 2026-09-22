@@ -4,8 +4,9 @@ import br.imd.ufrn.lab.gateway.GatewayMain;
 
 /**
  * Processo de UMA instância:
- *   HeartbeatClient  → gateway :9000
- *   InstanceTcpServer → responde TIME na porta local
+ *   HeartbeatClient     → gateway :9000
+ *   InstanceTcpServer   → TIME (TCP) + GET /time/* (HTTP) na porta local
+ *   InstanceUdpServer   → TIME (UDP) na mesma porta
  *
  * Uso: java ... InstanceMain <br|pt> <instanceId> <port> [gatewayHost] [advertiseHost]
  */
@@ -35,7 +36,8 @@ public class InstanceMain {
 
         System.out.println("[lab-instance] " + instanceId
                 + " tipo=" + serviceType
-                + " porta=" + listenPort);
+                + " porta=" + listenPort
+                + " (TCP/HTTP + UDP)");
 
         HeartbeatClient heartbeat = new HeartbeatClient(
                 gatewayHost,
@@ -45,6 +47,11 @@ public class InstanceMain {
                 listenPort,
                 instanceId);
         heartbeat.start();
+
+        Thread udp = new Thread(
+                new InstanceUdpServer(instanceId, serviceType, listenPort),
+                "lab-udp-" + instanceId);
+        udp.start();
 
         new InstanceTcpServer(instanceId, serviceType, listenPort).run();
     }

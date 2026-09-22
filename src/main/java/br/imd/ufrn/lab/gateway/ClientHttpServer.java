@@ -91,11 +91,13 @@ public class ClientHttpServer implements Runnable {
             }
 
             if ("/time/br".equals(path)) {
-                sendResponse(s, 200, handler.handleZone("br") + "\n");
+                String body = handler.handleZone("br", TransportProtocol.HTTP) + "\n";
+                sendResponse(s, body.startsWith("OK ") ? 200 : 502, body);
                 return;
             }
             if ("/time/pt".equals(path)) {
-                sendResponse(s, 200, handler.handleZone("pt") + "\n");
+                String body = handler.handleZone("pt", TransportProtocol.HTTP) + "\n";
+                sendResponse(s, body.startsWith("OK ") ? 200 : 502, body);
                 return;
             }
 
@@ -120,6 +122,9 @@ public class ClientHttpServer implements Runnable {
                 break;
             case 405:
                 statusText = "Method Not Allowed";
+                break;
+            case 502:
+                statusText = "Bad Gateway";
                 break;
             default:
                 statusText = "Error";

@@ -41,7 +41,7 @@ public class ClientTcpServer implements Runnable {
              PrintWriter out = new PrintWriter(s.getOutputStream(), true, StandardCharsets.UTF_8)) {
 
             String line = in.readLine();
-            out.println(handler.handleLine(line));
+            out.println(handler.handleLine(line, TransportProtocol.TCP));
         } catch (Exception e) {
             System.err.println("[lab-tcp] falha: " + e.getMessage());
         }

@@ -30,7 +30,7 @@ public class ClientUdpServer implements Runnable {
                 InetAddress clientAddress = request.getAddress();
                 int clientPort = request.getPort();
 
-                String response = handler.handleLine(line);
+                String response = handler.handleLine(line, TransportProtocol.UDP);
                 byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
                 DatagramPacket responsePacket = new DatagramPacket(
                         bytes, bytes.length, clientAddress, clientPort);

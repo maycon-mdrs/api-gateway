@@ -8,30 +8,40 @@ br.imd.ufrn.lab
 ├── gateway/     → processo do Gateway
 │   ├── GatewayMain
 │   ├── HeartbeatServer   (:9000)
-│   ├── ClientHttpServer  (:8080)
-│   ├── ClientUdpServer   (:9090)
-│   ├── ClientTcpServer   (:9091)
+│   ├── ClientHttpServer  (:8080) → HttpForwarder
+│   ├── ClientUdpServer   (:9090) → UdpForwarder
+│   ├── ClientTcpServer   (:9091) → TcpForwarder
 │   ├── TimeRequestHandler
+│   ├── TransportProtocol
 │   ├── InstanceRegistry
-│   └── TcpForwarder
+│   ├── TcpForwarder
+│   ├── UdpForwarder
+│   └── HttpForwarder
 └── instance/    → processo de cada instância
     ├── InstanceMain
     ├── HeartbeatClient
-    └── InstanceTcpServer
+    ├── InstanceTcpServer  (TIME linha + GET /time/*)
+    └── InstanceUdpServer  (TIME datagram, mesma porta)
 ```
 
 ## Portas
 
 | Porta | Papel |
 |------:|-------|
-| 9000 | REGISTER / HEARTBEAT |
+| 9000 | REGISTER / HEARTBEAT (controle, TCP) |
 | 8080 | Cliente HTTP: `GET /time/br`, `GET /time/pt`, `GET /registry` |
 | 9090 | Cliente UDP: datagram `TIME br` / `TIME pt` |
 | 9091 | Cliente TCP: linha `TIME br` / `TIME pt` |
-| 91xx | Instâncias Brasil |
-| 92xx | Instâncias Portugal |
+| 91xx | Instâncias Brasil (TCP/HTTP + UDP na mesma porta) |
+| 92xx | Instâncias Portugal (TCP/HTTP + UDP na mesma porta) |
 
-As instâncias continuam só em TCP. HTTP e UDP no gateway viram `TIME br|pt` e usam o mesmo round-robin + `TcpForwarder`.
+O protocolo da entrada do cliente é o mesmo até a instância:
+
+- HTTP → HTTP (`GET /time/br|pt`)
+- UDP → UDP (`TIME br|pt`)
+- TCP → TCP (`TIME br|pt`)
+
+gRPC fica de fora nesta fase.
 
 ## Compilar
 
