@@ -15,6 +15,10 @@ import java.util.concurrent.Executors;
 
 public class ClientHttpServer implements Runnable {
 
+    /** Sem isso, cada 1 request = 1 conexao TCP nova -- sob carga sustentada isso esgota
+     *  as portas efemeras do lado do cliente (JMeter) em segundos (confirmado em teste local). */
+    private static final int IDLE_TIMEOUT_MILLIS = 30_000;
+
     private final int port;
     private final TimeRequestHandler handler;
     private final InstanceRegistry registry;
@@ -43,64 +47,72 @@ public class ClientHttpServer implements Runnable {
         try (Socket s = socket;
              BufferedReader in = new BufferedReader(
                      new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8))) {
+            s.setSoTimeout(IDLE_TIMEOUT_MILLIS);
 
-            String headerLine = in.readLine();
-            if (headerLine == null || headerLine.isBlank()) {
-                sendResponse(s, 400, "Bad Request");
-                return;
-            }
-
-            String line;
-            while ((line = in.readLine()) != null && !line.isEmpty()) {
-                // ignora headers
-            }
-
-            StringTokenizer tokenizer = new StringTokenizer(headerLine);
-            if (tokenizer.countTokens() < 2) {
-                sendResponse(s, 400, "Bad Request");
-                return;
-            }
-
-            String method = tokenizer.nextToken().toUpperCase();
-            String pathAndQuery = tokenizer.nextToken();
-            String path = pathAndQuery;
-            int q = pathAndQuery.indexOf('?');
-            if (q >= 0) {
-                path = pathAndQuery.substring(0, q);
-            }
-
-            if (!"GET".equals(method)) {
-                sendResponse(s, 405, "Method Not Allowed");
-                return;
-            }
-
-            if ("/registry".equals(path)) {
-                StringBuilder body = new StringBuilder();
-                for (InstanceInfo instance : registry.listAllInstances()) {
-                    body.append(instance).append('\n');
+            // 1 conexao = varios requests em sequencia (keep-alive), ate o cliente
+            // desconectar (readLine devolve null) ou ficar ocioso demais (timeout abaixo).
+            String headerLine;
+            while ((headerLine = in.readLine()) != null) {
+                if (!headerLine.isBlank()) {
+                    handleOne(s, in, headerLine);
                 }
-                if (body.isEmpty()) {
-                    body.append("(nenhuma instancia registrada)\n");
-                }
-                sendResponse(s, 200, body.toString());
-                return;
             }
-
-            if ("/time/br".equals(path)) {
-                String body = handler.handleZone("br", TransportProtocol.HTTP) + "\n";
-                sendResponse(s, body.startsWith("OK ") ? 200 : 502, body);
-                return;
-            }
-            if ("/time/pt".equals(path)) {
-                String body = handler.handleZone("pt", TransportProtocol.HTTP) + "\n";
-                sendResponse(s, body.startsWith("OK ") ? 200 : 502, body);
-                return;
-            }
-
-            sendResponse(s, 404, "Not Found\n");
+        } catch (java.net.SocketTimeoutException e) {
+            // conexao ociosa por tempo demais -- fecha em silencio, e esperado
         } catch (Exception e) {
             System.err.println("[http] falha: " + e.getMessage());
         }
+    }
+
+    private void handleOne(Socket s, BufferedReader in, String headerLine) throws IOException {
+        String line;
+        while ((line = in.readLine()) != null && !line.isEmpty()) {
+            // ignora headers
+        }
+
+        StringTokenizer tokenizer = new StringTokenizer(headerLine);
+        if (tokenizer.countTokens() < 2) {
+            sendResponse(s, 400, "Bad Request");
+            return;
+        }
+
+        String method = tokenizer.nextToken().toUpperCase();
+        String pathAndQuery = tokenizer.nextToken();
+        String path = pathAndQuery;
+        int q = pathAndQuery.indexOf('?');
+        if (q >= 0) {
+            path = pathAndQuery.substring(0, q);
+        }
+
+        if (!"GET".equals(method)) {
+            sendResponse(s, 405, "Method Not Allowed");
+            return;
+        }
+
+        if ("/registry".equals(path)) {
+            StringBuilder body = new StringBuilder();
+            for (InstanceInfo instance : registry.listAllInstances()) {
+                body.append(instance).append('\n');
+            }
+            if (body.isEmpty()) {
+                body.append("(nenhuma instancia registrada)\n");
+            }
+            sendResponse(s, 200, body.toString());
+            return;
+        }
+
+        if ("/time/br".equals(path)) {
+            String body = handler.handleZone("br", TransportProtocol.HTTP) + "\n";
+            sendResponse(s, body.startsWith("OK ") ? 200 : 502, body);
+            return;
+        }
+        if ("/time/pt".equals(path)) {
+            String body = handler.handleZone("pt", TransportProtocol.HTTP) + "\n";
+            sendResponse(s, body.startsWith("OK ") ? 200 : 502, body);
+            return;
+        }
+
+        sendResponse(s, 404, "Not Found\n");
     }
 
     private void sendResponse(Socket socket, int status, String body) throws IOException {
@@ -128,10 +140,10 @@ public class ClientHttpServer implements Runnable {
         }
 
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-        out.writeBytes("HTTP/1.0 " + status + " " + statusText + "\r\n");
+        out.writeBytes("HTTP/1.1 " + status + " " + statusText + "\r\n");
         out.writeBytes("Content-Type: text/plain; charset=utf-8\r\n");
         out.writeBytes("Content-Length: " + bytes.length + "\r\n");
-        out.writeBytes("Connection: close\r\n");
+        out.writeBytes("Connection: keep-alive\r\n");
         out.writeBytes("\r\n");
         out.write(bytes);
         out.flush();

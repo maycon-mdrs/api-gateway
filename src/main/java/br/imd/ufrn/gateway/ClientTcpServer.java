@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 
 public class ClientTcpServer implements Runnable {
 
+    private static final int IDLE_TIMEOUT_MILLIS = 30_000;
+
     private final int port;
     private final TimeRequestHandler handler;
     private final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
@@ -39,9 +41,18 @@ public class ClientTcpServer implements Runnable {
              BufferedReader in = new BufferedReader(
                      new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8));
              PrintWriter out = new PrintWriter(s.getOutputStream(), true, StandardCharsets.UTF_8)) {
+            s.setSoTimeout(IDLE_TIMEOUT_MILLIS);
 
-            String line = in.readLine();
-            out.println(handler.handleLine(line, TransportProtocol.TCP));
+            // 1 conexao aceita varias linhas "TIME br|pt" em sequencia, ate o cliente
+            // desconectar ou ficar ocioso demais -- ver ClientHttpServer para o porque.
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (!line.isBlank()) {
+                    out.println(handler.handleLine(line, TransportProtocol.TCP));
+                }
+            }
+        } catch (java.net.SocketTimeoutException e) {
+            // conexao ociosa por tempo demais -- fecha em silencio, e esperado
         } catch (Exception e) {
             System.err.println("[tcp] falha: " + e.getMessage());
         }
