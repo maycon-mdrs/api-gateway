@@ -1,5 +1,6 @@
 package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.Log;
 import br.imd.ufrn.model.InstanceInfo;
 
 import java.io.IOException;
@@ -30,28 +31,32 @@ public class TimeRequestHandler {
      */
     public String handleZone(String zone, TransportProtocol protocol) {
         if (zone == null) {
-            return "ERROR usage: TIME br|pt";
+            return fail(protocol, "zona nula", "ERROR usage: TIME br|pt");
         }
         String normalized = zone.trim().toLowerCase();
         if (!"br".equals(normalized) && !"pt".equals(normalized)) {
-            return "ERROR usage: TIME br|pt";
+            return fail(protocol, "zona invalida: " + zone, "ERROR usage: TIME br|pt");
         }
 
         Optional<InstanceInfo> target = registry.nextHealthy(normalized);
         if (target.isEmpty()) {
-            return "ERROR no healthy instance for " + normalized;
+            return fail(protocol, "nenhuma instancia viva para " + normalized, "ERROR no healthy instance for " + normalized);
         }
 
         InstanceInfo instance = target.get();
         String payload = "TIME " + normalized;
-        System.out.println("[route] " + protocol + " " + payload + " -> " + instance);
         try {
-            return switch (protocol) {
+            String response = switch (protocol) {
                 case TCP -> tcpForwarder.forward(instance, payload);
                 case UDP -> udpForwarder.forward(instance, payload);
                 case HTTP -> httpForwarder.forward(instance, normalized);
             };
+            if (response == null || response.isBlank() || response.startsWith("ERROR")) {
+                Log.error(protocol + " " + payload + " -> " + instance + " resposta=" + response);
+            }
+            return response == null ? "ERROR empty response" : response;
         } catch (IOException e) {
+            Log.error(protocol + " forward " + payload + " -> " + instance, e);
             return "ERROR forward failed: " + e.getMessage();
         }
     }
@@ -69,5 +74,10 @@ public class TimeRequestHandler {
             return "ERROR usage: TIME br|pt";
         }
         return handleZone(parts[1], protocol);
+    }
+
+    private static String fail(TransportProtocol protocol, String reason, String response) {
+        Log.error(protocol + " " + reason);
+        return response;
     }
 }

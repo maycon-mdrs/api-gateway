@@ -1,5 +1,6 @@
-package br.imd.ufrn.gateway;
+﻿package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.Log;
 import br.imd.ufrn.model.InstanceInfo;
 
 import java.io.BufferedReader;
@@ -35,7 +36,7 @@ public class ClientHttpServer implements Runnable {
                 pool.execute(() -> handle(socket));
             }
         } catch (IOException e) {
-            System.err.println("[http] erro: " + e.getMessage());
+            Log.error("[http] servidor parou na porta " + port, e);
         }
     }
 
@@ -46,6 +47,7 @@ public class ClientHttpServer implements Runnable {
 
             String headerLine = in.readLine();
             if (headerLine == null || headerLine.isBlank()) {
+                Log.error("[http] request vazio de " + s.getRemoteSocketAddress());
                 sendResponse(s, 400, "Bad Request");
                 return;
             }
@@ -99,7 +101,7 @@ public class ClientHttpServer implements Runnable {
 
             sendResponse(s, 404, "Not Found\n");
         } catch (Exception e) {
-            System.err.println("[http] falha: " + e.getMessage());
+            Log.error("[http] falha com cliente " + peer(socket), e);
         }
     }
 
@@ -135,5 +137,13 @@ public class ClientHttpServer implements Runnable {
         out.writeBytes("\r\n");
         out.write(bytes);
         out.flush();
+    }
+
+    private static String peer(Socket socket) {
+        try {
+            return String.valueOf(socket.getRemoteSocketAddress());
+        } catch (Exception e) {
+            return "?";
+        }
     }
 }

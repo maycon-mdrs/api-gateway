@@ -32,7 +32,8 @@ public class UdpForwarder {
             try {
                 socket.receive(response);
             } catch (SocketTimeoutException e) {
-                throw new IOException("UDP timeout waiting for " + target, e);
+                throw new IOException("UDP timeout esperando " + target.getHost() + ":" + target.getPort()
+                        + " (timeout=" + timeoutMillis + "ms)", e);
             }
 
             return new String(

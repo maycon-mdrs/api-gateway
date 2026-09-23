@@ -1,5 +1,7 @@
 package br.imd.ufrn.instance;
 
+import br.imd.ufrn.Log;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -47,7 +49,7 @@ public class InstanceTcpServer implements Runnable {
                 pool.execute(() -> handleRequest(socket));
             }
         } catch (IOException e) {
-            System.err.println("[" + instanceId + "] erro: " + e.getMessage());
+            Log.error("[" + instanceId + "] TCP/HTTP parou na porta " + listenPort, e);
         }
     }
 
@@ -58,6 +60,7 @@ public class InstanceTcpServer implements Runnable {
 
             String firstLine = in.readLine();
             if (firstLine == null || firstLine.isBlank()) {
+                Log.error("[" + instanceId + "] request vazio de " + s.getRemoteSocketAddress());
                 writePlainLine(s, "ERROR empty");
                 return;
             }
@@ -69,7 +72,7 @@ public class InstanceTcpServer implements Runnable {
 
             writePlainLine(s, answerTimeLine(firstLine));
         } catch (IOException e) {
-            System.err.println("[" + instanceId + "] falha: " + e.getMessage());
+            Log.error("[" + instanceId + "] falha com cliente " + peer(socket), e);
         }
     }
 
@@ -142,5 +145,13 @@ public class InstanceTcpServer implements Runnable {
         out.writeBytes("\r\n");
         out.write(bytes);
         out.flush();
+    }
+
+    private static String peer(Socket socket) {
+        try {
+            return String.valueOf(socket.getRemoteSocketAddress());
+        } catch (Exception e) {
+            return "?";
+        }
     }
 }

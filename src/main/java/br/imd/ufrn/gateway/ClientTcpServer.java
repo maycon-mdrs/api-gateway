@@ -1,5 +1,7 @@
 package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,7 +32,7 @@ public class ClientTcpServer implements Runnable {
                 pool.execute(() -> handle(socket));
             }
         } catch (IOException e) {
-            System.err.println("[tcp] erro: " + e.getMessage());
+            Log.error("[tcp] servidor parou na porta " + port, e);
         }
     }
 
@@ -41,9 +43,18 @@ public class ClientTcpServer implements Runnable {
              PrintWriter out = new PrintWriter(s.getOutputStream(), true, StandardCharsets.UTF_8)) {
 
             String line = in.readLine();
-            out.println(handler.handleLine(line, TransportProtocol.TCP));
+            String response = handler.handleLine(line, TransportProtocol.TCP);
+            out.println(response);
         } catch (Exception e) {
-            System.err.println("[tcp] falha: " + e.getMessage());
+            Log.error("[tcp] falha com cliente " + peer(socket), e);
+        }
+    }
+
+    private static String peer(Socket socket) {
+        try {
+            return String.valueOf(socket.getRemoteSocketAddress());
+        } catch (Exception e) {
+            return "?";
         }
     }
 }

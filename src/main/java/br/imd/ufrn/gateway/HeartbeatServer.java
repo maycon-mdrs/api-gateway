@@ -1,5 +1,6 @@
 package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.Log;
 import br.imd.ufrn.model.InstanceInfo;
 
 import java.io.BufferedReader;
@@ -34,7 +35,7 @@ public class HeartbeatServer implements Runnable {
                 pool.execute(() -> handleConnection(socket));
             }
         } catch (IOException e) {
-            System.err.println("[heartbeat] erro: " + e.getMessage());
+            Log.error("[heartbeat] servidor parou na porta " + port, e);
         }
     }
 
@@ -46,17 +47,22 @@ public class HeartbeatServer implements Runnable {
 
             String line = in.readLine();
             if (line == null || line.isBlank()) {
+                Log.error("[heartbeat] linha vazia de " + s.getRemoteSocketAddress());
                 out.println("ERROR empty");
                 return;
             }
 
-            out.println(processCommandLine(line.trim()));
+            String response = processCommandLine(line.trim(), s.getRemoteSocketAddress());
+            if (response.startsWith("ERROR")) {
+                Log.error("[heartbeat] " + s.getRemoteSocketAddress() + " cmd=\"" + line.trim() + "\" -> " + response);
+            }
+            out.println(response);
         } catch (Exception e) {
-            System.err.println("[heartbeat] falha: " + e.getMessage());
+            Log.error("[heartbeat] falha na conexao " + peer(socket), e);
         }
     }
 
-    private String processCommandLine(String line) {
+    private String processCommandLine(String line, Object peer) {
         StringTokenizer tokens = new StringTokenizer(line);
         if (!tokens.hasMoreTokens()) {
             return "ERROR empty";
@@ -64,21 +70,26 @@ public class HeartbeatServer implements Runnable {
 
         String command = tokens.nextToken().toUpperCase();
         return switch (command) {
-            case "REGISTER" -> handleRegister(tokens);
+            case "REGISTER" -> handleRegister(tokens, peer);
             case "HEARTBEAT" -> handleHeartbeat(tokens);
             case "LIST" -> handleList();
             default -> "ERROR unknown command";
         };
     }
 
-    private String handleRegister(StringTokenizer tokens) {
+    private String handleRegister(StringTokenizer tokens, Object peer) {
         if (tokens.countTokens() < 4) {
             return "ERROR usage: REGISTER <br|pt> <host> <port> <instanceId>";
         }
 
         String type = tokens.nextToken().toLowerCase();
         String host = tokens.nextToken();
-        int instancePort = Integer.parseInt(tokens.nextToken());
+        int instancePort;
+        try {
+            instancePort = Integer.parseInt(tokens.nextToken());
+        } catch (NumberFormatException e) {
+            return "ERROR porta invalida";
+        }
         String instanceId = tokens.nextToken();
 
         if (!"br".equals(type) && !"pt".equals(type)) {
@@ -86,6 +97,7 @@ public class HeartbeatServer implements Runnable {
         }
 
         registry.register(new InstanceInfo(instanceId, type, host, instancePort));
+        Log.info("[REGISTER] " + instanceId + " " + type + " " + host + ":" + instancePort + " peer=" + peer);
         return "OK registered";
     }
 
@@ -95,6 +107,14 @@ public class HeartbeatServer implements Runnable {
         }
         registry.heartbeat(tokens.nextToken());
         return "OK";
+    }
+
+    private static String peer(Socket socket) {
+        try {
+            return String.valueOf(socket.getRemoteSocketAddress());
+        } catch (Exception e) {
+            return "?";
+        }
     }
 
     private String handleList() {

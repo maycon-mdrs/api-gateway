@@ -1,5 +1,7 @@
 package br.imd.ufrn.instance;
 
+import br.imd.ufrn.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,7 +48,8 @@ public class HeartbeatClient {
             sendLine("REGISTER " + serviceType + " " + advertiseHost + " "
                     + listenPort + " " + instanceId);
         } catch (IOException e) {
-            System.err.println("[" + instanceId + "] REGISTER falhou: " + e.getMessage());
+            Log.error("[" + instanceId + "] REGISTER handshake falhou em "
+                    + gatewayHost + ":" + gatewayHeartbeatPort, e);
         }
 
         while (!Thread.currentThread().isInterrupted()) {
@@ -57,7 +60,8 @@ public class HeartbeatClient {
                 Thread.currentThread().interrupt();
                 return;
             } catch (IOException e) {
-                System.err.println("[" + instanceId + "] HEARTBEAT falhou: " + e.getMessage());
+                Log.error("[" + instanceId + "] HEARTBEAT handshake falhou em "
+                        + gatewayHost + ":" + gatewayHeartbeatPort, e);
             }
         }
     }
@@ -71,7 +75,9 @@ public class HeartbeatClient {
                     new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             out.println(line);
             String response = in.readLine();
-            System.out.println("[" + instanceId + "] " + line + " -> " + response);
+            if (response == null || response.startsWith("ERROR")) {
+                Log.error("[" + instanceId + "] " + line + " -> " + response);
+            }
         }
     }
 }

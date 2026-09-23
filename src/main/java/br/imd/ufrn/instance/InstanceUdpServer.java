@@ -1,5 +1,7 @@
 package br.imd.ufrn.instance;
 
+import br.imd.ufrn.Log;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -44,7 +46,7 @@ public class InstanceUdpServer implements Runnable {
                 socket.send(responsePacket);
             }
         } catch (IOException e) {
-            System.err.println("[" + instanceId + "] UDP erro: " + e.getMessage());
+            Log.error("[" + instanceId + "] UDP parou na porta " + listenPort, e);
         }
     }
 

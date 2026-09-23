@@ -1,5 +1,7 @@
 package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.Log;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -37,7 +39,7 @@ public class ClientUdpServer implements Runnable {
                 socket.send(responsePacket);
             }
         } catch (IOException e) {
-            System.err.println("[udp] erro: " + e.getMessage());
+            Log.error("[udp] servidor parou na porta " + port, e);
         }
     }
 }

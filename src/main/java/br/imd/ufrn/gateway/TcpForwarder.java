@@ -20,10 +20,13 @@ public class TcpForwarder {
     }
 
     public String forward(InstanceInfo target, String line) throws IOException {
+        String where = target.getHost() + ":" + target.getPort();
         try (Socket socket = new Socket()) {
-            socket.connect(
-                    new java.net.InetSocketAddress(target.getHost(), target.getPort()),
-                    connectTimeoutMillis);
+            try {
+                socket.connect(new java.net.InetSocketAddress(target.getHost(), target.getPort()), connectTimeoutMillis);
+            } catch (IOException e) {
+                throw new IOException("TCP handshake falhou com " + where + " (timeout=" + connectTimeoutMillis + "ms)", e);
+            }
             socket.setSoTimeout(readTimeoutMillis);
 
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true, StandardCharsets.UTF_8);
@@ -31,7 +34,12 @@ public class TcpForwarder {
                     new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
             out.println(line);
-            String response = in.readLine();
+            String response;
+            try {
+                response = in.readLine();
+            } catch (IOException e) {
+                throw new IOException("TCP leitura falhou em " + where + " (timeout=" + readTimeoutMillis + "ms)", e);
+            }
             return response == null ? "ERROR empty response" : response;
         }
     }

@@ -1,5 +1,6 @@
 package br.imd.ufrn.gateway;
 
+import br.imd.ufrn.Log;
 import br.imd.ufrn.model.InstanceInfo;
 
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ public class InstanceRegistry {
         }
         for (String id : expired) {
             InstanceInfo removed = instances.remove(id);
-            System.out.println("[TIMEOUT] removendo " + removed);
+            Log.error("[TIMEOUT] instancia morta removida: " + removed);
         }
     }
 

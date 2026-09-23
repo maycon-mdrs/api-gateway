@@ -22,10 +22,13 @@ public class HttpForwarder {
 
     public String forward(InstanceInfo target, String zone) throws IOException {
         String path = "/time/" + zone.trim().toLowerCase();
+        String where = target.getHost() + ":" + target.getPort();
         try (Socket socket = new Socket()) {
-            socket.connect(
-                    new InetSocketAddress(target.getHost(), target.getPort()),
-                    connectTimeoutMillis);
+            try {
+                socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), connectTimeoutMillis);
+            } catch (IOException e) {
+                throw new IOException("HTTP handshake falhou com " + where + path + " (timeout=" + connectTimeoutMillis + "ms)", e);
+            }
             socket.setSoTimeout(readTimeoutMillis);
 
             String request = "GET " + path + " HTTP/1.0\r\n"
