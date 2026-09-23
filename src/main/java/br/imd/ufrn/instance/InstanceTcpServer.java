@@ -22,6 +22,8 @@ import java.util.concurrent.Executors;
 public class InstanceTcpServer implements Runnable {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    /** Conexao ociosa alem disso e encerrada -- evita segurar sockets do pool do gateway para sempre. */
+    private static final int IDLE_TIMEOUT_MILLIS = 30_000;
 
     private final String instanceId;
     private final String serviceType;
@@ -55,34 +57,45 @@ public class InstanceTcpServer implements Runnable {
         try (Socket s = socket;
              BufferedReader in = new BufferedReader(
                      new InputStreamReader(s.getInputStream(), StandardCharsets.UTF_8))) {
+            s.setSoTimeout(IDLE_TIMEOUT_MILLIS);
 
-            String firstLine = in.readLine();
-            if (firstLine == null || firstLine.isBlank()) {
-                writePlainLine(s, "ERROR empty");
-                return;
+            // Uma conexao pode carregar varias requisicoes seguidas (TCP-line ou HTTP
+            // keep-alive) -- so encerra quando o peer fecha, fica ociosa demais ou pede close.
+            String firstLine;
+            while ((firstLine = in.readLine()) != null) {
+                if (firstLine.isBlank()) {
+                    continue;
+                }
+
+                if (firstLine.toUpperCase().startsWith("GET ")) {
+                    if (!handleHttp(s, in, firstLine)) {
+                        return;
+                    }
+                } else {
+                    writePlainLine(s, answerTimeLine(firstLine));
+                }
             }
-
-            if (firstLine.toUpperCase().startsWith("GET ")) {
-                handleHttp(s, in, firstLine);
-                return;
-            }
-
-            writePlainLine(s, answerTimeLine(firstLine));
+        } catch (java.net.SocketTimeoutException e) {
+            // ociosa por tempo demais -- fecha em silencio, e comportamento esperado
         } catch (IOException e) {
             System.err.println("[" + instanceId + "] falha: " + e.getMessage());
         }
     }
 
-    private void handleHttp(Socket socket, BufferedReader in, String requestLine) throws IOException {
+    /** @return true se a conexao deve continuar aberta para a proxima requisicao. */
+    private boolean handleHttp(Socket socket, BufferedReader in, String requestLine) throws IOException {
+        boolean clientWantsClose = false;
         String line;
         while ((line = in.readLine()) != null && !line.isEmpty()) {
-            // ignora headers
+            if (line.toLowerCase().startsWith("connection:") && line.toLowerCase().contains("close")) {
+                clientWantsClose = true;
+            }
         }
 
         StringTokenizer tokenizer = new StringTokenizer(requestLine);
         if (tokenizer.countTokens() < 2) {
-            sendHttp(socket, 400, "Bad Request\n");
-            return;
+            sendHttp(socket, 400, "Bad Request\n", clientWantsClose);
+            return !clientWantsClose;
         }
 
         tokenizer.nextToken();
@@ -97,11 +110,12 @@ public class InstanceTcpServer implements Runnable {
             String zone = path.substring("/time/".length());
             String body = answerZone(zone) + "\n";
             int status = body.startsWith("OK ") ? 200 : 400;
-            sendHttp(socket, status, body);
-            return;
+            sendHttp(socket, status, body, clientWantsClose);
+            return !clientWantsClose;
         }
 
-        sendHttp(socket, 404, "Not Found\n");
+        sendHttp(socket, 404, "Not Found\n", clientWantsClose);
+        return !clientWantsClose;
     }
 
     private String answerTimeLine(String line) {
@@ -125,7 +139,7 @@ public class InstanceTcpServer implements Runnable {
         out.println(response);
     }
 
-    private void sendHttp(Socket socket, int status, String body) throws IOException {
+    private void sendHttp(Socket socket, int status, String body, boolean close) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         String statusText = switch (status) {
             case 200 -> "OK";
@@ -135,10 +149,10 @@ public class InstanceTcpServer implements Runnable {
         };
 
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-        out.writeBytes("HTTP/1.0 " + status + " " + statusText + "\r\n");
+        out.writeBytes("HTTP/1.1 " + status + " " + statusText + "\r\n");
         out.writeBytes("Content-Type: text/plain; charset=utf-8\r\n");
         out.writeBytes("Content-Length: " + bytes.length + "\r\n");
-        out.writeBytes("Connection: close\r\n");
+        out.writeBytes("Connection: " + (close ? "close" : "keep-alive") + "\r\n");
         out.writeBytes("\r\n");
         out.write(bytes);
         out.flush();
