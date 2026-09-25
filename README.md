@@ -6,73 +6,93 @@ gRPC fora do escopo atual.
 
 ## Pré-requisitos
 
-- JDK 21+ (testado com 22)
-- Maven 3.8+ (opcional; usado na EC2 / Amazon Linux)
-- Lombok no Maven local (só para compilar `InstanceInfo` via `javac` manual)
+- JDK 21+
+- Maven 3.8+
 
 ## Como rodar
 
-```bash
-mvn -DskipTests compile
-```
-
-No Windows (script de start):
+Compile e suba dois processos: o gateway e a ferramenta da porta 8081. As quatro instâncias entram pelos `POST` da seção seguinte, não por um `java` para cada uma.
 
 ```powershell
-.\scripts\start.ps1
-```
-
-Ou `javac` manualmente:
-
-```powershell
-mkdir -Force target\classes | Out-Null
-$lombok = "$env:USERPROFILE\.m2\repository\org\projectlombok\lombok\1.18.38\lombok-1.18.38.jar"
-$json = "$env:USERPROFILE\.m2\repository\org\json\json\20250517\json-20250517.jar"
-javac -encoding UTF-8 -cp "$lombok;$json" -processorpath $lombok -d target\classes `
-  (Get-ChildItem -Recurse src\main\java\br\imd\ufrn -Filter *.java | ForEach-Object FullName)
-```
-
-## Subir
-
-Manual (um processo = um `Main`):
-
-```powershell
+mvn clean install
 java -cp target\classes br.imd.ufrn.Main gateway
-java -cp target\classes br.imd.ufrn.Main br br-1 9101
-java -cp target\classes br.imd.ufrn.Main br br-2 9102
-java -cp target\classes br.imd.ufrn.Main pt pt-1 9201
-java -cp target\classes br.imd.ufrn.Main pt pt-2 9202
+java -cp "target\classes;target\lib\*" br.imd.ufrn.ops.InstanceManagerServer 8081
 ```
 
-## Portas
-
-| Porta | Papel |
-|------:|-------|
-| 9000 | REGISTER / HEARTBEAT |
-| 8080 | Cliente HTTP (`GET /time/br`, `/time/pt`, `/registry`) |
-| 8081 | Ferramenta de operação (`POST`/`DELETE`/`GET /instances`) |
-| 9090 | Cliente UDP (`TIME br\|pt`) |
-| 9091 | Cliente TCP (`TIME br\|pt`) |
-| 91xx / 92xx | Instâncias BR / PT |
-
-## Ferramenta de operação (subir/derrubar instâncias)
-
-Auxiliar, fora do API Gateway e dos protocolos avaliados. Usa o `HttpServer` do JDK só para ligar e desligar os processos das instâncias na mesma máquina (útil na avaliação de tolerância a falhas). O JSON entra pela biblioteca `org.json`; o `mvn compile` copia o jar para `target/lib`.
+No Linux o separador do classpath é `:`.
 
 ```bash
+mvn clean install
+java -cp target/classes br.imd.ufrn.Main gateway
 java -cp "target/classes:target/lib/*" br.imd.ufrn.ops.InstanceManagerServer 8081
 ```
 
+Com os dois no ar, crie `br-1` (9101), `br-2` (9102), `pt-1` (9201) e `pt-2` (9202) com os `POST` abaixo.
+
+## Portas
+
+
+| Porta       | Papel                                                     |
+| ----------- | --------------------------------------------------------- |
+| 9000        | REGISTER / HEARTBEAT                                      |
+| 8080        | Cliente HTTP (`GET /time/br`, `/time/pt`, `/registry`)    |
+| 8081        | Ferramenta de operação (`POST`/`DELETE`/`GET /instances`) |
+| 9090        | Cliente UDP (`TIME br` e `TIME pt`)                       |
+| 9091        | Cliente TCP (`TIME br` e `TIME pt`)                       |
+| 91xx / 92xx | Instâncias BR / PT                                        |
+
+
+
+
+## Derrubar e subir instâncias
+
+Com o gateway e a ferramenta da seção anterior no ar, estes pedidos criam e encerram as instâncias na mesma máquina.
+
+São quatro instâncias (`br-1`, `br-2`, `pt-1`, `pt-2`). O ideal é derrubar no máximo uma do BR e/ou uma do PT. Se as duas de uma zona caírem, o horário dessa zona deixa de responder.
+
+Os exemplos usam `127.0.0.1` (na própria máquina, local ou EC2). De fora, troque pelo endereço público.
+
+**Derrubar** (`DELETE` encerra pelo `logs/<id>.pid`):
+
 ```bash
-curl -X POST "http://<IP>:8081/instances" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"pt","id":"pt-1","port":9201}'
-
-curl -X DELETE "http://<IP>:8081/instances" \
-  -H "Content-Type: application/json" \
-  -d '{"id":"pt-1"}'
-
-curl "http://<IP>:8081/instances"
+curl -X DELETE "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"id\":\"br-1\"}"
+curl -X DELETE "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"id\":\"br-2\"}"
+curl -X DELETE "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"id\":\"pt-1\"}"
+curl -X DELETE "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"id\":\"pt-2\"}"
 ```
 
-`POST` sobe `java ... br.imd.ufrn.Main` com o tipo, id e porta do JSON (`gatewayHost` e `advertiseHost` são opcionais, padrão `127.0.0.1`). `DELETE` encerra o processo lendo `logs/<id>.pid`. Cada instância também grava esse arquivo ao iniciar, então um worker subido manualmente com `nohup` também pode ser derrubado por aqui. Log do processo: `logs/<id>.log`.
+**Subir** (`POST` inicia de novo o mesmo tipo, id e porta):
+
+```bash
+curl -X POST "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"type\":\"br\",\"id\":\"br-1\",\"port\":9101}"
+curl -X POST "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"type\":\"br\",\"id\":\"br-2\",\"port\":9102}"
+curl -X POST "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"type\":\"pt\",\"id\":\"pt-1\",\"port\":9201}"
+curl -X POST "http://127.0.0.1:8081/instances" -H "Content-Type: application/json" -d "{\"type\":\"pt\",\"id\":\"pt-2\",\"port\":9202}"
+```
+
+**Listar:** `curl "http://127.0.0.1:8081/instances"`
+
+Resposta ao subir: `OK on <id> pid <pid>`. Ao desligar: `OK off <id> pid <pid>`. Log do processo: `logs/<id>.log`.
+
+No Postman, importe `postman/instances.postman_collection.json` (Import, depois o arquivo). A coleção **Instance Manager** traz o GET que lista, a pasta **Ligar** com o POST de cada instância e a pasta **Desligar** com o DELETE de cada uma. A variável `baseUrl` vem como `http://127.0.0.1:8081`. De fora da máquina, troque pelo endereço público na porta 8081.
+
+## Testes de carga (JMeter)
+
+Três planos, um por protocolo. Cada um pede horário do BR e do PT no gateway. As variáveis do plano são `gatewayHost`, `users` (8), `ramp` (5 segundos) e `duration`. O host padrão do arquivo é o da EC2.
+
+
+| Arquivo                 | O que dispara                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| `jmeter/carga-tcp.jmx`  | TCP na porta 9091, linhas `TIME br` e `TIME pt`                                            |
+| `jmeter/carga-http.jmx` | HTTP na porta 8080, `GET /time/br` e `GET /time/pt`                                        |
+| `jmeter/carga-udp.jmx`  | UDP na porta 9090, datagramas `TIME br` e `TIME pt`. Precisa do plugin jp@gc (UDP Request) |
+
+
+Os três abrem Sumário, Árvore de resultados, transações por segundo e tempo de resposta. Com a carga rodando, derrubar e subir instâncias é pelos `DELETE` e `POST` da seção anterior.
+
+```powershell
+jmeter -n -t jmeter\carga-tcp.jmx "-JgatewayHost=127.0.0.1" "-Jusers=8" "-Jramp=5"
+jmeter -n -t jmeter\carga-http.jmx "-JgatewayHost=127.0.0.1" "-Jusers=8" "-Jramp=5"
+jmeter -n -t jmeter\carga-udp.jmx "-JgatewayHost=127.0.0.1" "-Jusers=8" "-Jramp=5"
+```
+
