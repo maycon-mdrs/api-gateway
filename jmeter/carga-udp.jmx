@@ -1,20 +1,19 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="API Gateway BR/PT — só UDP :9090">
-      <stringProp name="TestPlan.comments">Plano isolado UDP (plugin jp@gc). Demo users=8; stress alto (ex. 200) ainda Error≈0.</stringProp>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="API Gateway BR/PT — UDP :9090">
       <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Variáveis Definidas Pelo Usuário">
         <collectionProp name="Arguments.arguments">
           <elementProp name="gatewayHost" elementType="Argument">
             <stringProp name="Argument.name">gatewayHost</stringProp>
-            <stringProp name="Argument.value">18.219.12.66</stringProp>
+            <stringProp name="Argument.value">3.146.239.232</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">IP público da EC2 (ou 127.0.0.1 local)</stringProp>
           </elementProp>
           <elementProp name="users" elementType="Argument">
             <stringProp name="Argument.name">users</stringProp>
-            <stringProp name="Argument.value">8</stringProp>
+            <stringProp name="Argument.value">5</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">Threads (&gt;5 e &lt; Knee; demo=8 Error≈0)</stringProp>
           </elementProp>
@@ -26,13 +25,12 @@
           </elementProp>
           <elementProp name="duration" elementType="Argument">
             <stringProp name="Argument.name">duration</stringProp>
-            <stringProp name="Argument.value">20</stringProp>
+            <stringProp name="Argument.value"></stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">Segundos de carga</stringProp>
           </elementProp>
         </collectionProp>
       </elementProp>
-      <boolProp name="TestPlan.functional_mode">false</boolProp>
     </TestPlan>
     <hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="UDP :9090">
@@ -41,7 +39,6 @@
         <stringProp name="ThreadGroup.duration">${__P(duration,${duration})}</stringProp>
         <longProp name="ThreadGroup.delay">0</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
-        <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Controlador de Iteração">
           <intProp name="LoopController.loops">-1</intProp>
@@ -56,6 +53,18 @@
           <boolProp name="closechannel">false</boolProp>
           <stringProp name="timeout">5000</stringProp>
           <stringProp name="data">TIME br</stringProp>
+          <stringProp name="encodeclass">kg.apc.jmeter.samplers.DirectUDPDecoder</stringProp>
+          <stringProp name="bind_address"></stringProp>
+          <stringProp name="bind_port"></stringProp>
+        </kg.apc.jmeter.samplers.UDPSampler>
+        <hashTree/>
+        <kg.apc.jmeter.samplers.UDPSampler guiclass="kg.apc.jmeter.samplers.UDPSamplerGui" testclass="kg.apc.jmeter.samplers.UDPSampler" testname="jp@gc - UDP TIME pt">
+          <stringProp name="hostname">${__P(gatewayHost,${gatewayHost})}</stringProp>
+          <stringProp name="port">9090</stringProp>
+          <boolProp name="waitresponse">true</boolProp>
+          <boolProp name="closechannel">false</boolProp>
+          <stringProp name="timeout">5000</stringProp>
+          <stringProp name="data">TIME pt</stringProp>
           <stringProp name="encodeclass">kg.apc.jmeter.samplers.DirectUDPDecoder</stringProp>
           <stringProp name="bind_address"></stringProp>
           <stringProp name="bind_port"></stringProp>
@@ -98,7 +107,7 @@
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore UDP">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Árvore UDP" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>

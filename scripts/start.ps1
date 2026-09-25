@@ -17,9 +17,14 @@ $lombok = Join-Path $env:USERPROFILE ".m2\repository\org\projectlombok\lombok\1.
 if (-not (Test-Path $lombok)) {
     $lombok = Join-Path $env:USERPROFILE ".m2\repository\org\projectlombok\lombok\1.18.30\lombok-1.18.30.jar"
 }
+$json = Join-Path $env:USERPROFILE ".m2\repository\org\json\json\20250517\json-20250517.jar"
 $javacArgs = @("-encoding", "UTF-8", "-d", $outDir)
+$cp = @($lombok, $json) | Where-Object { Test-Path $_ }
+if ($cp) {
+    $javacArgs += @("-cp", ($cp -join ";"))
+}
 if (Test-Path $lombok) {
-    $javacArgs += @("-cp", $lombok, "-processorpath", $lombok)
+    $javacArgs += @("-processorpath", $lombok)
 }
 $javacArgs += $sources
 & javac @javacArgs

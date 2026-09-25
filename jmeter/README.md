@@ -74,19 +74,19 @@ cd C:\Users\mayco\OneDrive\Documentos\UF\api-gateway\jmeter
 
 # demo completo (avaliação)
 jmeter -n -t carga-completa.jmx `
-  "-JgatewayHost=18.219.12.66" `
+  "-JgatewayHost=3.146.239.232" `
   "-Jusers=8" "-Jramp=8" "-Jduration=60" `
   -l results-demo-u8.jtl
 
 # só TCP com erro
 jmeter -n -t carga-tcp.jmx `
-  "-JgatewayHost=18.219.12.66" `
+  "-JgatewayHost=3.146.239.232" `
   "-Jusers=15" "-Jramp=5" "-Jduration=20" `
   -l results-tcp-u15.jtl
 
 # só UDP stress
 jmeter -n -t carga-udp.jmx `
-  "-JgatewayHost=18.219.12.66" `
+  "-JgatewayHost=3.146.239.232" `
   "-Jusers=200" "-Jramp=5" "-Jduration=20" `
   -l results-udp-u200.jtl
 ```

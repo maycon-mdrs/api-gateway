@@ -7,9 +7,9 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="gatewayHost" elementType="Argument">
             <stringProp name="Argument.name">gatewayHost</stringProp>
-            <stringProp name="Argument.value">18.219.12.66</stringProp>
+            <stringProp name="Argument.value">3.146.239.232</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
-            <stringProp name="Argument.desc">IP/hostname do API Gateway (IP público da EC2; trocar se reiniciar sem Elastic IP). Local: 127.0.0.1</stringProp>
+            <stringProp name="Argument.desc">IP/hostname do API Gateway (Elastic IP 3.146.239.232). Local: 127.0.0.1</stringProp>
           </elementProp>
           <elementProp name="users" elementType="Argument">
             <stringProp name="Argument.name">users</stringProp>

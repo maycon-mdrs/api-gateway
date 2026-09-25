@@ -3,6 +3,7 @@
 
 # Log file
 *.log
+*.pid
 
 # BlueJ files
 *.ctxt
@@ -48,3 +49,6 @@ replay_pid*
 /aulas
 
 *.pem
+
+# catalogo local de workers (porta tipo id), gerado pelo gateway
+runtime/

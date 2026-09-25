@@ -2,6 +2,10 @@ package br.imd.ufrn.instance;
 
 import br.imd.ufrn.gateway.GatewayMain;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class InstanceMain {
 
     public static void main(String[] args) {
@@ -26,6 +30,8 @@ public class InstanceMain {
         String gatewayHost = args.length > 3 ? args[3] : "127.0.0.1";
         String advertiseHost = args.length > 4 ? args[4] : "127.0.0.1";
 
+        writePidFile(instanceId);
+
         System.out.println("[instance] " + instanceId
                 + " tipo=" + serviceType
                 + " porta=" + listenPort
@@ -46,5 +52,16 @@ public class InstanceMain {
         udp.start();
 
         new InstanceTcpServer(instanceId, serviceType, listenPort).run();
+    }
+
+    private static void writePidFile(String instanceId) {
+        try {
+            Path dir = Path.of("logs");
+            Files.createDirectories(dir);
+            Files.writeString(dir.resolve(instanceId + ".pid"),
+                    String.valueOf(ProcessHandle.current().pid()));
+        } catch (IOException e) {
+            System.err.println("[instance] falha ao gravar pid file: " + e.getMessage());
+        }
     }
 }

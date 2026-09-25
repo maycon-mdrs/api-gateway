@@ -1,4 +1,4 @@
-# Ambiente AWS — registro
+﻿# Ambiente AWS — registro
 
 Documentação do que foi feito na EC2 para o api-gateway (1 máquina).
 
@@ -6,22 +6,28 @@ Documentação do que foi feito na EC2 para o api-gateway (1 máquina).
 
 ## Ambiente
 
-| Campo       | Valor                                                   |
-| ----------- | ------------------------------------------------------- |
-| Instância   | UNIDADE1 (`i-0dfac3592a81dc46e`)                        |
-| Tipo        | `t3.micro`                                              |
-| Região      | `us-east-2`                                             |
-| SO          | Amazon Linux 2023                                       |
-| Usuário SSH | `ec2-user`                                              |
-| IP privado  | `172.31.39.59`                                          |
-| IP público  | `18.219.12.66` *(muda se reiniciar sem Elastic IP)* |
-| Chave       | `my-key.pem` (raiz do projeto, ignorada no Git)         |
-| Security Group | `launch-wizard-1` (`sg-0e4e6ed231cc5eab6`)           |
-| Topologia   | 1 EC2: gateway + workers no mesmo host (`127.0.0.1`)    |
+
+| Campo          | Valor                                                   |
+| -------------- | ------------------------------------------------------- |
+| Instância      | UNIDADE1 (`i-0dfac3592a81dc46e`)                        |
+| Tipo           | `t3.micro`                                              |
+| Região         | `us-east-2`                                             |
+| SO             | Amazon Linux 2023                                       |
+| Usuário SSH    | `ec2-user`                                              |
+| IP privado     | `172.31.39.59`                                          |
+| IP público     | Elastic IP `3.146.239.232` (permanece ao parar/iniciar) |
+| Chave          | `my-key.pem` (raiz do projeto, ignorada no Git)         |
+| Security Group | `launch-wizard-1` (`sg-0e4e6ed231cc5eab6`)              |
+| Topologia      | 1 EC2: gateway + workers no mesmo host (`127.0.0.1`)    |
+
 
 ---
 
+
+
 ## O que já foi feito
+
+
 
 ### 1. Permissões da chave (PowerShell, no PC)
 
@@ -32,11 +38,15 @@ icacls.exe $k /GRANT:R "$($env:USERNAME):R"
 icacls.exe $k /inheritance:r
 ```
 
+
+
 ### 2. Conexão SSH (PowerShell, no PC)
 
 ```powershell
 ssh -i $k ec2-user@<IP_PUBLICO>
 ```
+
+
 
 ### 3. Atualização, Java 21 e Maven (bash, na VM)
 
@@ -105,6 +115,7 @@ nohup java -cp target/classes br.imd.ufrn.Main br br-1 9101 > br-1.log 2>&1 &
 nohup java -cp target/classes br.imd.ufrn.Main br br-2 9102 > br-2.log 2>&1 &
 nohup java -cp target/classes br.imd.ufrn.Main pt pt-1 9201 > pt-1.log 2>&1 &
 nohup java -cp target/classes br.imd.ufrn.Main pt pt-2 9202 > pt-2.log 2>&1 &
+nohup java -cp "target/classes:target/lib/*" br.imd.ufrn.ops.InstanceManagerServer 8081 > manager.log 2>&1 &
 ```
 
 Conferência:
@@ -115,19 +126,24 @@ tail -n 20 gateway.log
 ```
 
 Gateway ouvindo 8080/9090/9091/9000; registry com `br-1`, `br-2`, `pt-1`, `pt-2` em `127.0.0.1`.
+A ferramenta de operação escuta em `8081` (`manager.log`).
+
+Durante o teste de carga, derrubar uma instância (a taxa de erro deve subir) e recriá-la (a taxa deve cair):
+
+```bash
+curl -X DELETE "http://127.0.0.1:8081/instances" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"pt-1"}'
+
+curl -X POST "http://127.0.0.1:8081/instances" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"pt","id":"pt-1","port":9201}'
+```
+
+`DELETE` encerra o processo pelo `logs/<id>.pid`. `POST` sobe de novo o mesmo tipo, id e porta.
 
 ### 7. Security Group
 
 SG `launch-wizard-1`: além de SSH (22), liberar acesso à aplicação (ex. **Todo o tráfego** ou portas 8080/TCP, 9091/TCP, 9090/UDP) com origem adequada.
 
----
-
-## O que ainda falta
-
-1. Gerar gráficos knee/usable no Excel a partir de `jmeter/knee-usable-template.csv` e colar no `.docx` do relatório.
-2. Na avaliação: JMeter com `users=10` e demo de `pkill` + restart.
-3. **Desligar a EC2** quando não estiver em uso (custo).
-
----
-
-*Última atualização: varredura knee 1–80 concluída (2BR+2PT); usable demo=8; gráficos regenerados.*
+A porta `8081/TCP` só é necessária se a ferramenta de operação for chamada de fora da VM. Os `curl` acima rodam na própria EC2 e não precisam dessa regra.

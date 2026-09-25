@@ -13,7 +13,7 @@
           </elementProp>
           <elementProp name="users" elementType="Argument">
             <stringProp name="Argument.name">users</stringProp>
-            <stringProp name="Argument.value">5</stringProp>
+            <stringProp name="Argument.value">8</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
             <stringProp name="Argument.desc">Threads (&gt;5 e &lt; Knee; demo=8 Error≈0)</stringProp>
           </elementProp>
@@ -45,7 +45,7 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP TIME br">
+        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP TIME br" enabled="true">
           <stringProp name="TCPSampler.classname">TCPClientImpl</stringProp>
           <stringProp name="TCPSampler.server">${__P(gatewayHost,${gatewayHost})}</stringProp>
           <boolProp name="TCPSampler.reUseConnection">false</boolProp>
@@ -60,22 +60,7 @@
           <stringProp name="ConfigTestElement.password"></stringProp>
         </TCPSampler>
         <hashTree/>
-        <TCPSampler guiclass="TCPSamplerGui" testclass="TCPSampler" testname="TCP TIME pt">
-          <stringProp name="TCPSampler.classname">TCPClientImpl</stringProp>
-          <stringProp name="TCPSampler.server">${__P(gatewayHost,${gatewayHost})}</stringProp>
-          <boolProp name="TCPSampler.reUseConnection">false</boolProp>
-          <stringProp name="TCPSampler.port">9091</stringProp>
-          <boolProp name="TCPSampler.nodelay">false</boolProp>
-          <stringProp name="TCPSampler.timeout"></stringProp>
-          <stringProp name="TCPSampler.request">TIME pt
-</stringProp>
-          <boolProp name="TCPSampler.closeConnection">true</boolProp>
-          <stringProp name="TCPSampler.EolByte">10</stringProp>
-          <stringProp name="ConfigTestElement.username"></stringProp>
-          <stringProp name="ConfigTestElement.password"></stringProp>
-        </TCPSampler>
-        <hashTree/>
-        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário TCP">
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Sumário TCP" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -150,7 +135,7 @@
         </ResultCollector>
         <hashTree/>
       </hashTree>
-      <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.TransactionsPerSecondGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Transactions per Second">
+      <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.TransactionsPerSecondGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Transactions per Second" enabled="true">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
           <name>saveConfig</name>
