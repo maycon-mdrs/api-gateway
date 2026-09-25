@@ -106,6 +106,16 @@ mvn clean install
 
 ### 6. Subir gateway + workers (bash, na VM)
 
+Antes de subir de novo, encerre o que já estiver no ar. Processos antigos seguram as portas e a subida nova fica pela metade (dois gateways, workers que morrem na hora).
+
+```bash
+pkill -f br.imd.ufrn
+sleep 2
+ps aux | grep br.imd.ufrn | grep -v grep
+```
+
+A segunda linha tem que voltar vazia. `pkill -f br.imd.ufrn` pega os cinco `Main` e o `InstanceManagerServer`.
+
 ```bash
 cd ~/api-gateway
 
@@ -118,12 +128,23 @@ nohup java -cp target/classes br.imd.ufrn.Main pt pt-2 9202 > pt-2.log 2>&1 &
 nohup java -cp "target/classes:target/lib/*" br.imd.ufrn.ops.InstanceManagerServer 8081 > manager.log 2>&1 &
 ```
 
-Conferência:
+Conferência dos 6 processos (`grep br.imd.ufrn.Main` não mostra o manager):
 
 ```bash
-ps aux | grep br.imd.ufrn.Main | grep -v grep
+ps aux | grep br.imd.ufrn | grep -v grep
 tail -n 20 gateway.log
 ```
+
+Devem aparecer exatamente estas seis linhas, todas com horário de agora:
+
+| Processo | Comando |
+| --- | --- |
+| gateway | `br.imd.ufrn.Main gateway` |
+| br-1 | `br.imd.ufrn.Main br br-1 9101` |
+| br-2 | `br.imd.ufrn.Main br br-2 9102` |
+| pt-1 | `br.imd.ufrn.Main pt pt-1 9201` |
+| pt-2 | `br.imd.ufrn.Main pt pt-2 9202` |
+| manager | `br.imd.ufrn.ops.InstanceManagerServer 8081` |
 
 Gateway ouvindo 8080/9090/9091/9000; registry com `br-1`, `br-2`, `pt-1`, `pt-2` em `127.0.0.1`.
 A ferramenta de operação escuta em `8081` (`manager.log`).
